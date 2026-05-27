@@ -5,7 +5,7 @@ import time
 import os
 import signal
 
-import logger
+import logging
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
