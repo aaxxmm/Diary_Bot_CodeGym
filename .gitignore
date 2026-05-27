@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Secrets
+.env
+user_data.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (если не хотите хранить в репозитории)
+data/*.json
+!data/.gitkeep
+

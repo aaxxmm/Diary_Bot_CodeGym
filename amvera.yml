@@ -1,0 +1,16 @@
+meta:
+  environment: python
+  version: "3.14"
+
+build:
+  - apt-get update && apt-get install -y ffmpeg
+  - pip install -r requirements.txt
+
+run:
+  command: python main.py
+  persistence:
+    - /app/data
+
+environment:
+  - name: PYTHONUNBUFFERED
+    value: "1"

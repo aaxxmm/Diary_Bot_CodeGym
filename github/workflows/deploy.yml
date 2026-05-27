@@ -1,0 +1,32 @@
+name: Deploy to Amvera
+
+# Когда запускать автоматически
+on:
+  push:
+    branches: [ main ]     # При пуше в ветку main
+  workflow_dispatch:       # Или вручную из интерфейса GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем ваш код из GitHub
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Настраиваем Git для Amvera
+      - name: Setup Git for Amvera
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 3. Добавляем Amvera как удаленный репозиторий
+      - name: Add Amvera remote
+        run: |
+          git remote add amvera https://git.amvera.ru/${{ secrets.AMVERA_REPO }}.git
+
+      # 4. Отправляем код на Amvera
+      - name: Push to Amvera
+        run: |
+          git push https://${{ secrets.AMVERA_USER }}:${{ secrets.AMVERA_PASSWORD }}@git.amvera.ru/${{ secrets.AMVERA_REPO }}.git HEAD:master --force
