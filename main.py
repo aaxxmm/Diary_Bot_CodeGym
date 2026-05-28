@@ -12,6 +12,11 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+print("========== ENV ==========")
+print(os.environ)
+print("=========================")
+print("TOKEN_TG =", os.getenv("TOKEN_TG"))
+
 import config
 from handlers import all_routers
 from scheduler.tasks import check_overdue_tasks, check_upcoming_deadlines, check_birthdays
