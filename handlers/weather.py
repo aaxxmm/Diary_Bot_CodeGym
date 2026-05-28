@@ -9,7 +9,6 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
-from states.user_states import WeatherStates
 from keyboards.keyboar import main_keyboard, back_keyboard, get_notes_reply_keyboard, get_ai_menu, get_hr_menu
 from config import settings, token_weather
 from states.user_states import WeatherStates
