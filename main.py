@@ -16,6 +16,20 @@ import config
 from handlers import all_routers
 from scheduler.tasks import check_overdue_tasks, check_upcoming_deadlines, check_birthdays
 
+# ДИАГНОСТИКА: покажет все переменные окружения (только для отладки!)
+print("=" * 50)
+print("ДОСТУПНЫЕ ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ:")
+print("=" * 50)
+for key in os.environ.keys():
+    if "TOKEN" in key or "TG" in key or "WEATHER" in key or "OPENAI" in key:
+        print(f"  {key} = {os.environ[key][:20]}..." if len(os.environ.get(key, "")) > 20 else f"  {key} = {os.environ[key]}")
+print("=" * 50)
+
+# Проверяем конкретно TOKEN_TG
+tg_token = os.getenv("TOKEN_TG")
+print(f"🔍 TOKEN_TG = {tg_token[:20] if tg_token else 'НЕ НАЙДЕН'}...")
+print("=" * 50)
+
 # ============================================
 # ЗАДЕРЖКА ПРИ СТАРТЕ (важно для Amvera!)
 # ============================================
@@ -40,6 +54,7 @@ os.environ['no_proxy'] = '*'
 log_level_str = config.settings.log_level.upper()
 if log_level_str not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
     log_level_str = 'INFO'
+
     logger.warning(f"Некорректный уровень логирования, используем INFO")
 
 logging.basicConfig(
