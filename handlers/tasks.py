@@ -251,7 +251,7 @@ async def process_task_reminder(message: Message, state: FSMContext):
 
     data = await state.get_data()
 
-    task = await storage.add_task(
+    task = storage.add_task(
         user_id=message.from_user.id,
         title=data['title'],
         description=data.get('description', ''),
@@ -313,7 +313,7 @@ async def select_task(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    task = await storage.get_task(user_id, task_id)
+    task = storage.get_task(user_id, task_id)
     if not task:
         await callback.answer("Задача не найдена")
         return
@@ -354,7 +354,7 @@ async def complete_task(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if await storage.update_task_status(user_id, task_id, 'completed'):
+    if storage.update_task_status(user_id, task_id, 'completed'):
         await callback.answer("✅ Задача выполнена!")
         await manage_tasks(callback)
     else:
@@ -380,7 +380,7 @@ async def postpone_task(callback: CallbackQuery):
     minutes = int(parts[3])
     user_id = callback.from_user.id
 
-    if await storage.postpone_task(user_id, task_id, minutes):
+    if storage.postpone_task(user_id, task_id, minutes):
         await callback.answer(f"⏰ Задача отложена на {minutes} минут!")
         await select_task(callback)
     else:
@@ -407,7 +407,7 @@ async def delete_task(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if await storage.delete_task(user_id, task_id):
+    if storage.delete_task(user_id, task_id):
         await callback.answer("🗑 Задача удалена!")
         await manage_tasks(callback)
     else:

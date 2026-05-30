@@ -126,7 +126,9 @@ def get_note_actions_keyboard(note_id: int, note_title: str):
     if note_title is None:
         note_title = "заметка"
     buttons = [
-        [InlineKeyboardButton(text="✏️ Редактировать", callback_data=f"note_edit:{note_id}")],
+        [InlineKeyboardButton(text="✏️ Редактировать текст", callback_data=f"note_edit:{note_id}")],
+        [InlineKeyboardButton(text="📝 Редактировать заголовок", callback_data=f"note_edit_title:{note_id}")],
+        [InlineKeyboardButton(text="🏷️ Редактировать теги", callback_data=f"note_edit_tags:{note_id}")],
         [InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"note_delete:{note_id}")],
         [InlineKeyboardButton(text="◀️ К списку", callback_data="note_back_to_list")]
     ]
@@ -626,6 +628,187 @@ async def cancel_delete(callback: CallbackQuery):
     )
     await callback.answer()
 
+# ============================================
+# РЕДАКТИРОВАНИЕ ЗАГОЛОВКА
+# ============================================
+
+@router.callback_query(F.data.startswith("note_edit_title:"))
+async def edit_note_title_start(callback: CallbackQuery, state: FSMContext):
+    """Начало редактирования заголовка заметки"""
+    try:
+        note_index = int(callback.data.split(":")[1])
+    except (IndexError, ValueError):
+        await callback.answer("❌ Ошибка")
+        return
+
+    user_id = callback.from_user.id
+    notes = load_notes(user_id)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+    if note_index >= len(notes):
+        await callback.answer("❌ Заметка не найдена")
+        return
+
+    note = notes[note_index]
+    old_title = note.get("title") or "Без названия"
+
+    await state.update_data(edit_note_index=note_index)
+    await state.set_state(NoteState.waiting_for_new_title)
+
+    await callback.message.edit_text(
+        f"✏️ *Редактирование заголовка заметки*\n\n"
+        f"📌 *Старый заголовок:* {old_title}\n\n"
+        f"Введите *новый заголовок* (максимум 50 символов):",
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
+@router.message(NoteState.waiting_for_new_title, F.text)
+async def save_edited_note_title(message: Message, state: FSMContext):
+    """Сохранение нового заголовка заметки"""
+    if message.text == "/cancel":
+        await state.clear()
+        await message.answer("❌ Редактирование отменено.", reply_markup=get_notes_reply_keyboard())
+        return
+
+    new_title = message.text.strip()
+
+    if len(new_title) > 50:
+        await message.answer("❌ Заголовок слишком длинный (максимум 50 символов). Попробуйте снова:")
+        return
+
+    if len(new_title) < 1:
+        await message.answer("❌ Заголовок не может быть пустым. Попробуйте снова:")
+        return
+
+    data = await state.get_data()
+    note_index = data.get("edit_note_index")
+    user_id = message.from_user.id
+    notes = load_notes(user_id)
+
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+    if note_index is None or note_index >= len(notes):
+        await message.answer("❌ Ошибка: заметка не найдена", reply_markup=get_notes_reply_keyboard())
+        await state.clear()
+        return
+
+    # Сохраняем старый заголовок для сообщения
+    old_title = notes[note_index].get("title") or "Без названия"
+
+    # Обновляем заголовок
+    notes[note_index]["title"] = new_title
+    notes[note_index]["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    save_notes(user_id, notes)
+
+    await state.clear()
+    await message.answer(
+        f"✅ *Заголовок заметки обновлён!*\n\n"
+        f"📌 *Было:* {old_title}\n"
+        f"📌 *Стало:* {new_title}",
+        reply_markup=get_notes_reply_keyboard(),
+        parse_mode="Markdown"
+    )
+
+
+# ============================================
+# РЕДАКТИРОВАНИЕ ТЕГОВ
+# ============================================
+
+@router.callback_query(F.data.startswith("note_edit_tags:"))
+async def edit_note_tags_start(callback: CallbackQuery, state: FSMContext):
+    """Начало редактирования тегов заметки"""
+    try:
+        note_index = int(callback.data.split(":")[1])
+    except (IndexError, ValueError):
+        await callback.answer("❌ Ошибка")
+        return
+
+    user_id = callback.from_user.id
+    notes = load_notes(user_id)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+    if note_index >= len(notes):
+        await callback.answer("❌ Заметка не найдена")
+        return
+
+    note = notes[note_index]
+    old_tags = note.get("tags") or []
+    old_tags_text = ', '.join(f'#{t}' for t in old_tags) if old_tags else "нет тегов"
+
+    await state.update_data(edit_note_index=note_index)
+    await state.set_state(NoteState.waiting_for_new_title)
+    await state.update_data(edit_mode="tags")
+
+    await callback.message.edit_text(
+        f"🏷️ *Редактирование тегов заметки*\n\n"
+        f"📌 *Текущие теги:* {old_tags_text}\n\n"
+        f"Введите новые теги через пробел или запятую:\n"
+        f"Пример: `работа важное идея`\n\n"
+        f"💡 Теги автоматически будут начинаться с #",
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
+@router.message(NoteState.waiting_for_new_title, F.text)
+async def save_edited_note_tags(message: Message, state: FSMContext):
+    """Сохранение новых тегов заметки"""
+    data = await state.get_data()
+    edit_mode = data.get("edit_mode")
+
+    # Если это не режим редактирования тегов — выходим
+    if edit_mode != "tags":
+        return
+
+    if message.text == "/cancel":
+        await state.clear()
+        await message.answer("❌ Редактирование отменено.", reply_markup=get_notes_reply_keyboard())
+        return
+
+    new_tags_text = message.text.strip()
+
+    # Разбираем теги (по пробелам или запятым)
+    if ',' in new_tags_text:
+        raw_tags = [t.strip() for t in new_tags_text.split(',')]
+    else:
+        raw_tags = new_tags_text.split()
+
+    # Очищаем теги: убираем #, приводим к нижнему регистру
+    tags = []
+    for tag in raw_tags:
+        tag = tag.lower().strip('#')
+        if tag and len(tag) <= 30:
+            tags.append(tag)
+
+    note_index = data.get("edit_note_index")
+    user_id = message.from_user.id
+    notes = load_notes(user_id)
+
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+    if note_index is None or note_index >= len(notes):
+        await message.answer("❌ Ошибка: заметка не найдена", reply_markup=get_notes_reply_keyboard())
+        await state.clear()
+        return
+
+    # Обновляем теги
+    notes[note_index]["tags"] = tags
+    notes[note_index]["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    save_notes(user_id, notes)
+
+    tags_display = ', '.join(f'#{t}' for t in tags) if tags else "нет тегов"
+
+    await state.clear()
+    await message.answer(
+        f"✅ *Теги заметки обновлены!*\n\n"
+        f"🏷️ *Новые теги:* {tags_display}",
+        reply_markup=get_notes_reply_keyboard(),
+        parse_mode="Markdown"
+    )
 
 # ============================================
 # ОБРАБОТЧИК ОТМЕНЫ (только для заметок)
