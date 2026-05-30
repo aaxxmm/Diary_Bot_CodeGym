@@ -318,6 +318,10 @@ async def select_task(callback: CallbackQuery):
         await callback.answer("Задача не найдена")
         return
 
+    # Безопасное получение атрибутов
+    title = task.title or "Без названия"
+    description = task.description or "Нет описания"
+
     deadline_dt = datetime.fromisoformat(task.deadline)
     days_left = task.days_until_deadline()
 

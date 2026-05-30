@@ -239,8 +239,9 @@ async def list_notes(message: Message):
         )
         return
 
-    # Сортируем по дате создания (новые сверху)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    # Безопасная сортировка (защита от None в created_at)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+    save_notes(user_id, notes)
 
     await message.answer(
         f"📋 *Ваши заметки* (всего: {len(notes)})\n\n"
@@ -381,9 +382,9 @@ async def search_notes_execute(message: Message, state: FSMContext):
     # Поиск
     results = []
     for note in notes:
-        title = note.get("title", "").lower()
-        content = note.get("content", "").lower()
-        tags = [t.lower() for t in note.get("tags", [])]
+        title = (note.get("title") or "").lower()
+        content = (note.get("content") or "").lower()
+        tags = [t.lower() for t in (note.get("tags") or [])]
 
         if (query in title or
                 query in content or
