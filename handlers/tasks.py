@@ -433,7 +433,7 @@ async def clear_completed_tasks(callback: CallbackQuery):
     completed_tasks = storage.get_user_tasks(user_id, status='completed')
 
     for task in completed_tasks:
-        await storage.delete_task(user_id, task.id)
+        storage.delete_task(user_id, task.id)
 
     await callback.answer("✅ Все выполненные задачи удалены")
     await show_completed_tasks(callback)
