@@ -295,7 +295,7 @@ class Storage:
         task = self.get_task(user_id, task_id)
         if task:
             task.status = status
-            await self._save()
+            self._save()
             return True
         return False
 

@@ -354,9 +354,19 @@ async def complete_task(callback: CallbackQuery):
     task_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
+    # Диагностика
+    task_before = storage.get_task(user_id, task_id)
+    logger.info(f"Before complete: status={task_before.status if task_before else 'None'}")
+
+    result = storage.update_task_status(user_id, task_id, 'completed')
+
+    # Диагностика
+    task_after = storage.get_task(user_id, task_id)
+    logger.info(f"After complete: result={result}, status={task_after.status if task_after else 'None'}")
+
     if storage.update_task_status(user_id, task_id, 'completed'):
         await callback.answer("✅ Задача выполнена!")
-        await manage_tasks(callback)
+        await show_completed_tasks(callback)  # ✅ Показываем выполненные задачи
     else:
         await callback.answer("❌ Ошибка при выполнении задачи")
 
