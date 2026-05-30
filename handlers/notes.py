@@ -96,7 +96,11 @@ def get_notes_list_keyboard(notes: list, page: int = 0):
 
     buttons = []
     for i, note in enumerate(page_notes, start=start):
-        title = note.get("title", "Без названия")[:30]
+        raw_title = note.get("title")
+        if raw_title is None:
+            raw_title = "Без названия"
+        title = str(raw_title)[:30]
+
         buttons.append([InlineKeyboardButton(
             text=f"📄 {title}",
             callback_data=f"note_view:{i}"
@@ -119,6 +123,8 @@ def get_notes_list_keyboard(notes: list, page: int = 0):
 
 def get_note_actions_keyboard(note_id: int, note_title: str):
     """Инлайн клавиатура для действий с заметкой"""
+    if note_title is None:
+        note_title = "заметка"
     buttons = [
         [InlineKeyboardButton(text="✏️ Редактировать", callback_data=f"note_edit:{note_id}")],
         [InlineKeyboardButton(text="🗑️ Удалить", callback_data=f"note_delete:{note_id}")],
@@ -190,6 +196,8 @@ async def create_note_content(message: Message, state: FSMContext):
 
     data = await state.get_data()
     title = data.get("note_title")
+    if title is None:
+        title = "Без названия"
 
     # Извлекаем теги из содержания
     tags = re.findall(r'#(\w+)', content)
@@ -266,7 +274,7 @@ async def notes_page_callback(callback: CallbackQuery):
 
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     await callback.message.edit_text(
         f"📋 *Ваши заметки* (всего: {len(notes)})\n\n"
@@ -288,7 +296,7 @@ async def view_note_callback(callback: CallbackQuery):
 
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index >= len(notes):
         await callback.answer("❌ Заметка не найдена")
@@ -296,19 +304,40 @@ async def view_note_callback(callback: CallbackQuery):
 
     note = notes[note_index]
 
-    tags_text = f"\n🏷️ Теги: {', '.join(f'#{t}' for t in note.get('tags', []))}" if note.get('tags') else ""
+    # Безопасное получение ВСЕХ полей (защита от None)
+    note_title = note.get("title")
+    if note_title is None:
+        note_title = "Без названия"
+
+    note_content = note.get("content")
+    if note_content is None:
+        note_content = ""
+
+    note_created = note.get("created_at")
+    if note_created is None:
+        note_created = "Неизвестно"
+
+    note_updated = note.get("updated_at")
+    if note_updated is None:
+        note_updated = "Неизвестно"
+
+    note_tags = note.get("tags")
+    if note_tags is None:
+        note_tags = []
+
+    tags_text = f"\n🏷️ Теги: {', '.join(f'#{t}' for t in note_tags)}" if note_tags else ""
 
     note_text = (
-        f"📄 *{note.get('title', 'Без названия')}*\n\n"
+        f"📄 *{note_title}*\n\n"
         f"📝 *Содержание:*\n"
-        f"{note.get('content', '')}\n\n"
-        f"🕐 *Создано:* {note.get('created_at', 'Неизвестно')}\n"
-        f"✏️ *Обновлено:* {note.get('updated_at', 'Неизвестно')}{tags_text}"
+        f"{note_content}\n\n"
+        f"🕐 *Создано:* {note_created}\n"
+        f"✏️ *Обновлено:* {note_updated}{tags_text}"
     )
 
     await callback.message.edit_text(
         note_text,
-        reply_markup=get_note_actions_keyboard(note_index, note.get('title', '')),
+        reply_markup=get_note_actions_keyboard(note_index, note_title),
         parse_mode="Markdown"
     )
     await callback.answer()
@@ -319,7 +348,7 @@ async def back_to_notes_list(callback: CallbackQuery):
     """Возврат к списку заметок"""
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     await callback.message.edit_text(
         f"📋 *Ваши заметки* (всего: {len(notes)})",
@@ -438,7 +467,7 @@ async def delete_note_menu(message: Message):
         )
         return
 
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     await message.answer(
         f"🗑️ *Выберите заметку для удаления*\n\n"
@@ -459,7 +488,7 @@ async def edit_note_start(callback: CallbackQuery, state: FSMContext):
 
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index >= len(notes):
         await callback.answer("❌ Заметка не найдена")
@@ -499,7 +528,7 @@ async def save_edited_note(message: Message, state: FSMContext):
     user_id = message.from_user.id
     notes = load_notes(user_id)
 
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index is None or note_index >= len(notes):
         await message.answer("❌ Ошибка: заметка не найдена", reply_markup=get_notes_reply_keyboard())
@@ -516,10 +545,13 @@ async def save_edited_note(message: Message, state: FSMContext):
 
     save_notes(user_id, notes)
 
-    await state.clear()
+    saved_title = notes[note_index].get("title")
+    if saved_title is None:
+        saved_title = "Без названия"
+
     await message.answer(
         f"✅ *Заметка обновлена!*\n\n"
-        f"📌 *Заголовок:* {notes[note_index].get('title')}",
+        f"📌 *Заголовок:* {saved_title}",
         reply_markup=get_notes_reply_keyboard(),
         parse_mode="Markdown"
     )
@@ -559,14 +591,19 @@ async def delete_note_execute(callback: CallbackQuery):
 
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index < len(notes):
         deleted_note = notes.pop(note_index)
         save_notes(user_id, notes)
+
+        deleted_title = deleted_note.get("title")
+        if deleted_title is None:
+            deleted_title = "Без названия"
+
         await callback.message.edit_text(
             f"✅ *Заметка удалена*\n\n"
-            f"Удалена заметка: *{deleted_note.get('title')}*",
+            f"Удалена заметка: *{deleted_title}*",
             parse_mode="Markdown"
         )
     else:
@@ -580,7 +617,7 @@ async def cancel_delete(callback: CallbackQuery):
     """Отмена удаления заметки"""
     user_id = callback.from_user.id
     notes = load_notes(user_id)
-    notes.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     await callback.message.edit_text(
         f"📋 *Ваши заметки* (всего: {len(notes)})",
