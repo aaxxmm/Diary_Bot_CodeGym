@@ -248,7 +248,7 @@ class Storage:
     # ============================================
     # TASK METHODS
     # ============================================
-    async def add_task(self, user_id: int, title: str, description: str,
+    def add_task(self, user_id: int, title: str, description: str,
                        deadline: datetime, reminder_minutes: int) -> Task:
         """Add new task for user"""
         # Конвертируем deadline в строку с ISO форматом
@@ -290,7 +290,7 @@ class Storage:
                 return task
         return None
 
-    async def update_task_status(self, user_id: int, task_id: int, status: str) -> bool:
+    def update_task_status(self, user_id: int, task_id: int, status: str) -> bool:
         """Update task status"""
         task = self.get_task(user_id, task_id)
         if task:
@@ -299,7 +299,7 @@ class Storage:
             return True
         return False
 
-    async def postpone_task(self, user_id: int, task_id: int, minutes: int) -> bool:
+    def postpone_task(self, user_id: int, task_id: int, minutes: int) -> bool:
         """Postpone task by X minutes"""
         task = self.get_task(user_id, task_id)
         if task:
@@ -308,17 +308,17 @@ class Storage:
             new_deadline = current_deadline + timedelta(minutes=minutes)
             task.deadline = new_deadline.isoformat()
             task.postponed_count += 1
-            await self._save()
+            self._save()
             return True
         return False
 
-    async def delete_task(self, user_id: int, task_id: int) -> bool:
+    def delete_task(self, user_id: int, task_id: int) -> bool:
         """Delete task"""
         tasks = self.tasks.get(user_id, [])
         for i, task in enumerate(tasks):
             if task.id == task_id:
                 del tasks[i]
-                await self._save()
+                self._save()
                 return True
         return False
 
