@@ -273,7 +273,7 @@ class Storage:
             self.tasks[user_id] = []
 
         self.tasks[user_id].append(task)
-        await self._save()
+        self._save()
         return task
 
     def get_user_tasks(self, user_id: int, status: Optional[str] = None) -> List[Task]:

@@ -242,6 +242,14 @@ async def process_task_deadline(message: Message, state: FSMContext):
 @router.message(TaskStates.waiting_for_task_reminder)
 async def process_task_reminder(message: Message, state: FSMContext):
     """Process reminder setting"""
+
+    # ДИАГНОСТИКА
+    import inspect
+    logger.info(f"=== ДИАГНОСТИКА add_task ===")
+    logger.info(f"add_task is coroutine: {inspect.iscoroutinefunction(storage.add_task)}")
+    logger.info(f"add_task is method: {inspect.ismethod(storage.add_task)}")
+    logger.info(f"===========================")
+
     try:
         reminder_minutes = int(message.text.strip())
         if reminder_minutes < 1:
