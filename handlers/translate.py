@@ -1,4 +1,4 @@
-
+import config
 import io
 import logging
 from aiogram import Router, F
@@ -8,8 +8,9 @@ from aiogram.fsm.context import FSMContext
 from pydub import AudioSegment
 import speech_recognition as sr
 
+from utils.translate_service import translate_text
 from states.user_states import TranslateState
-from states.translate_states import translate_text
+from utils.translate_service import translate_text
 from keyboards.keyboar import main_keyboard, back_keyboard
 
 logger = logging.getLogger(__name__)
@@ -19,13 +20,12 @@ router = Router(name="translate")
 @router.message(TranslateState.waiting_for_text, F.text)
 async def translate_text_handler(message: Message, state: FSMContext):
     """Обработка текста для перевода"""
-    text = message.text
-    logger.info(f"Translation requested for text: {text[:50]}...")
+    # ДИАГНОСТИКА
+    logger.info("=== ТЕСТ ПЕРЕВОДА ===")
+    logger.info(f"Текст: {message.text[:50]}...")
 
-    # Проверяем наличие OpenAI ключа
-    import config
-    has_key = hasattr(config, 'token_openai') and config.token_openai
-    logger.info(f"OpenAI key present: {has_key}")
+    # Проверяем импорт translate_text
+    logger.info(f"translate_text импортирована: {translate_text}")
 
     await message.answer("🔄 Перевожу...")
 

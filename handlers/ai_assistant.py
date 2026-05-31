@@ -85,6 +85,12 @@ async def process_ai_request(message: Message, state: FSMContext):
     text = message.text.strip()
     data = await state.get_data()
 
+    # ДИАГНОСТИКА
+    logger.info("=== ТЕСТ AI ===")
+    logger.info(f"Режим edit: {data.get('edit_mode', False)}")
+    logger.info(f"Режим summarize: {data.get('summarize_mode', False)}")
+    logger.info(f"Текст: {text[:50]}...")
+
     edit_mode = data.get("edit_mode", False)
     summarize_mode = data.get("summarize_mode", False)
 
