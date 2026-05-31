@@ -325,7 +325,7 @@ class Storage:
     # ============================================
     # BIRTHDAY METHODS
     # ============================================
-    async def add_birthday(self, user_id: int, name: str, birth_date: str, year: Optional[int] = None) -> Birthday:
+    def add_birthday(self, user_id: int, name: str, birth_date: str, year: Optional[int] = None) -> Birthday:
         """Add new birthday"""
         birthday = Birthday(
             id=self._get_next_birthday_id(user_id),
@@ -339,7 +339,7 @@ class Storage:
             self.birthdays[user_id] = []
 
         self.birthdays[user_id].append(birthday)
-        await self._save()
+        self._save()
         return birthday
 
     def get_user_birthdays(self, user_id: int) -> List[Birthday]:

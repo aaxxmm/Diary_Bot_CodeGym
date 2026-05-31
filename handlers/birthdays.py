@@ -144,7 +144,7 @@ async def process_birthday_date(message: Message, state: FSMContext):
 
     data = await state.get_data()
 
-    birthday = storage.add_birthday(
+    birthday = await storage.add_birthday(
         user_id=message.from_user.id,
         name=data['name'],
         birth_date=birth_date,
@@ -228,7 +228,7 @@ async def delete_birthday(callback: CallbackQuery):
     birthday_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if storage.delete_birthday(user_id, birthday_id):
+    if await storage.delete_birthday(user_id, birthday_id):
         await callback.answer("✅ День рождения удален!")
         await show_birthdays_menu(callback, None)
     else:
@@ -270,7 +270,7 @@ async def toggle_birthday_notification(callback: CallbackQuery):
     birthday_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if storage.toggle_birthday_notification(user_id, birthday_id):
+    if await storage.toggle_birthday_notification(user_id, birthday_id):
         await callback.answer("Настройки обновлены!")
         await show_birthday_settings(callback)
     else:
