@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from pydub import AudioSegment
 import speech_recognition as sr
 
-from utils.translate_service import translate_text
+from typing import cast
 from states.user_states import TranslateState
 from utils.translate_service import translate_text
 from keyboards.keyboar import main_keyboard, back_keyboard
@@ -20,9 +20,11 @@ router = Router(name="translate")
 @router.message(TranslateState.waiting_for_text, F.text)
 async def translate_text_handler(message: Message, state: FSMContext):
     """Обработка текста для перевода"""
+    text_to_translate = message.text
+
     # ДИАГНОСТИКА
     logger.info("=== ТЕСТ ПЕРЕВОДА ===")
-    logger.info(f"Текст: {message.text[:50]}...")
+    logger.info(f"Текст: {message.text[:50] if message.text else 'None'}...")
 
     # Проверяем импорт translate_text
     logger.info(f"translate_text импортирована: {translate_text}")
@@ -30,13 +32,14 @@ async def translate_text_handler(message: Message, state: FSMContext):
     await message.answer("🔄 Перевожу...")
 
     # Переводим с английского на русский
-    translated = await translate_text(text, source_lang="auto", target_lang="ru")
+    text = cast(str, message.text)
+    translated = await translate_text(text_to_translate, source_lang="auto", target_lang="ru") # type: ignor
 
     logger.info(f"Translation result: {translated[:100] if translated else 'None'}")
 
     if translated and not translated.startswith("❌"):
         await message.answer(
-            f"📝 *Исходный текст:*\n{text}\n\n"
+            f"📝 *Исходный текст:*\n{text_to_translate}\n\n"
             f"🌐 *Перевод:*\n{translated}",
             parse_mode="Markdown",
             reply_markup=main_keyboard

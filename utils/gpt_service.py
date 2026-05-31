@@ -48,6 +48,12 @@ class GPTService:
             max_tokens: int = 1000,
             temperature: float = 0.7
     ) -> Optional[str]:
+
+        # ДИАГНОСТИКА
+        logger.info(f"=== GPT ЗАПРОС ===")
+        logger.info(f"API Key exists: {bool(self.client)}")
+        logger.info(f"Prompt: {prompt[:100]}...")
+
         """Get response from GPT"""
         if not self.client:
             return "❌ OpenAI API не настроен. Пожалуйста, добавьте TOKEN_OPENAI в переменные окружения."
@@ -66,7 +72,7 @@ class GPTService:
                 max_tokens=max_tokens,
                 temperature=temperature
             )
-
+            logger.info(f"✅ GPT ответ получен")
             return response.choices[0].message.content
 
         except Exception as e:
