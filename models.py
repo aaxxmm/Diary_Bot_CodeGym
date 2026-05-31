@@ -354,22 +354,22 @@ class Storage:
                 return bday
         return None
 
-    async def delete_birthday(self, user_id: int, birthday_id: int) -> bool:
+    def delete_birthday(self, user_id: int, birthday_id: int) -> bool:
         """Delete birthday"""
         birthdays = self.birthdays.get(user_id, [])
         for i, bday in enumerate(birthdays):
             if bday.id == birthday_id:
                 del birthdays[i]
-                await self._save()
+                self._save()
                 return True
         return False
 
-    async def toggle_birthday_notification(self, user_id: int, birthday_id: int) -> bool:
+    def toggle_birthday_notification(self, user_id: int, birthday_id: int) -> bool:
         """Toggle notification setting"""
         bday = self.get_birthday(user_id, birthday_id)
         if bday:
             bday.notification_enabled = not bday.notification_enabled
-            await self._save()
+            self._save()
             return True
         return False
 

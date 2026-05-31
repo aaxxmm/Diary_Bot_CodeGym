@@ -144,7 +144,7 @@ async def process_birthday_date(message: Message, state: FSMContext):
 
     data = await state.get_data()
 
-    birthday = await storage.add_birthday(
+    birthday = storage.add_birthday(
         user_id=message.from_user.id,
         name=data['name'],
         birth_date=birth_date,
