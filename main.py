@@ -11,6 +11,7 @@ from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from handlers import gpt, ai_assistant, translate
 
 print("========== ENV ==========")
 print(os.environ)
@@ -135,6 +136,10 @@ async def main():
             dp.include_router(router)
             router_name = getattr(router, 'name', 'unnamed')
             logger.info(f"✅ Подключен роутер: {router_name}")
+
+            # Дополнительная диагностика для AI роутеров
+            if 'ai' in router_name.lower() or 'gpt' in router_name.lower():
+                logger.info(f"   🤖 AI роутер обнаружен: {router_name}")
     else:
         logger.warning("⚠️ Нет подключенных роутеров!")
 

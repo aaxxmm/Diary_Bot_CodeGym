@@ -2,7 +2,6 @@
 # Импортируем все роутеры
 from .common import router as common_router
 from .weather import router as weather_router
-from .gpt import router as gpt_router
 from .tasks import router as tasks_router
 from .birthdays import router as birthdays_router
 from .notes import router as notes_router
@@ -15,7 +14,6 @@ all_routers = [
     notes_router,
     translate_router,
     weather_router,
-    gpt_router,
     tasks_router,
     birthdays_router,
     career_router,
@@ -25,3 +23,4 @@ all_routers = [
 
 # Логируем количество подключенных роутеров
 print(f"✅ Загружено {len(all_routers)} роутеров")
+print(f"Роутеры: {[r.name if hasattr(r, 'name') else 'unnamed' for r in all_routers]}")
