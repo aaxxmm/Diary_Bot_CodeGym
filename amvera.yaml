@@ -1,18 +1,12 @@
 meta:
-  toolchain: Python
-  version: "3.14"
-
+  environment: docker
+  toolchain:
+    name: docker
+    version: latest
 build:
-  commands:
-    - apt-get update
-    - apt-get install -y ffmpeg
-    - pip install -r requirements.txt
-
+  dockerfile: Dockerfile
 run:
-  command: python main.py
-  persistence:
-    - /app/data
-
-environment:
-  - name: PYTHONUNBUFFERED
-    value: "1"
+  persistenceMount: /data
+  # Если вашему приложению (например, боту) не нужно открывать HTTP-порт,
+  # укажите containerPort: null. По умолчанию Amvera ожидает порт 80.
+  containerPort: null

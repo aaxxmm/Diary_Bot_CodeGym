@@ -26,3 +26,6 @@ aiofiles==25.1.0
 
 # С поддержкой SQLite
 aiosqlite>=0.19.0
+
+pyTelegramBotAPI==4.15.4
+ffmpeg-python==0.2.0
