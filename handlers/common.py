@@ -309,3 +309,38 @@ async def fallback_handler(message: Message, state: FSMContext):
         "Пожалуйста, используйте кнопки меню для навигации:",
         reply_markup=main_keyboard
     )
+
+
+@router.message(Command("check_ffmpeg"))
+async def check_ffmpeg(message: Message):
+    """Проверка наличия ffmpeg"""
+    import subprocess
+    import shutil
+
+    # Проверяем через shutil
+    ffmpeg_path = shutil.which('ffmpeg')
+    ffprobe_path = shutil.which('ffprobe')
+
+    result = f"🔍 Проверка ffmpeg:\n"
+    result += f"ffmpeg: {'✅ найдена' if ffmpeg_path else '❌ не найдена'}\n"
+    if ffmpeg_path:
+        result += f"  Путь: {ffmpeg_path}\n"
+
+    result += f"ffprobe: {'✅ найдена' if ffprobe_path else '❌ не найдена'}\n"
+    if ffprobe_path:
+        result += f"  Путь: {ffprobe_path}\n"
+
+    # Пробуем выполнить команду
+    try:
+        result_exec = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
+        if result_exec.returncode == 0:
+            version_line = result_exec.stdout.split('\n')[0]
+            result += f"\n✅ ffmpeg работает: {version_line[:100]}"
+        else:
+            result += f"\n❌ ffmpeg не отвечает"
+    except FileNotFoundError:
+        result += f"\n❌ ffmpeg не установлен"
+    except Exception as e:
+        result += f"\n❌ Ошибка: {e}"
+
+    await message.answer(result)
