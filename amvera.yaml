@@ -1,10 +1,12 @@
 meta:
-  environment: docker
-  version: "1.0"
+  toolchain: Python
+  version: "3.14"
 
 build:
-  type: docker
-  dockerfile: Dockerfile
+  commands:
+    - apt-get update
+    - apt-get install -y ffmpeg
+    - pip install -r requirements.txt
 
 run:
   command: python main.py

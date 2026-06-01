@@ -118,3 +118,37 @@ async def handle_voice(message: Message, state: FSMContext):
             "• Длительность не превышает 60 секунд\n"
             "• Отправьте текст вместо голоса"
         )
+
+
+@router.message(Command("check_ffmpeg"))
+async def check_ffmpeg_command(message: Message):
+    """Проверка наличия ffmpeg"""
+    import shutil
+    import subprocess
+
+    ffmpeg_path = shutil.which('ffmpeg')
+    ffprobe_path = shutil.which('ffprobe')
+
+    result = "🔍 **Проверка ffmpeg:**\n\n"
+
+    if ffmpeg_path:
+        result += f"✅ ffmpeg: {ffmpeg_path}\n"
+        try:
+            proc = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
+            version = proc.stdout.split('\n')[0]
+            result += f"   Версия: {version[:60]}...\n"
+        except:
+            pass
+    else:
+        result += "❌ ffmpeg НЕ УСТАНОВЛЕН\n"
+
+    if ffprobe_path:
+        result += f"✅ ffprobe: {ffprobe_path}\n"
+    else:
+        result += "❌ ffprobe НЕ УСТАНОВЛЕН\n"
+
+    if not ffmpeg_path or not ffprobe_path:
+        result += "\n⚠️ Голосовые сообщения НЕ будут работать!\n"
+        result += "Обратитесь к администратору для установки ffmpeg."
+
+    await message.answer(result)
