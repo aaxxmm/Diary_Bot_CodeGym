@@ -66,6 +66,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# Проверка ffmpeg при старте
+def check_ffmpeg():
+    import shutil
+    ffmpeg_path = shutil.which('ffmpeg')
+    ffprobe_path = shutil.which('ffprobe')
+
+    if ffmpeg_path:
+        logger.info(f"✅ ffmpeg найден: {ffmpeg_path}")
+    else:
+        logger.warning("❌ ffmpeg НЕ НАЙДЕН! Голосовые сообщения не будут работать")
+
+    if ffprobe_path:
+        logger.info(f"✅ ffprobe найден: {ffprobe_path}")
+    else:
+        logger.warning("❌ ffprobe НЕ НАЙДЕН! Голосовые сообщения не будут работать")
+
+
+# Вызвать после настройки логгера
+check_ffmpeg()
+
 # ============================================
 # ФУНКЦИИ ЗАПУСКА/ОСТАНОВКИ
 # ============================================
