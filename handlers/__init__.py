@@ -1,4 +1,3 @@
-
 # Импортируем все роутеры
 from .common import router as common_router
 from .weather import router as weather_router
@@ -17,8 +16,8 @@ all_routers = [
     tasks_router,
     birthdays_router,
     career_router,
-    common_router,
     ai_assistant_router,
+    common_router,
 ]
 
 # Не экспортируем отдельные модули, только all_routers

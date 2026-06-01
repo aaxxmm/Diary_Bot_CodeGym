@@ -8,19 +8,10 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from states.user_states import TranslateState, GPTStates
 from utils.gpt_service import gpt_service
 from keyboards.keyboar import main_keyboard, back_keyboard, get_ai_menu, get_hr_menu
-from config import settings
+from handlers.common import get_cancel_inline_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router(name="ai_assistant")
-
-
-def get_cancel_inline_keyboard():
-    """Инлайн клавиатура для отмены"""
-    builder = InlineKeyboardBuilder()
-    builder.button(text="❌ Отмена", callback_data="menu:ai")
-    builder.button(text="🏠 Главное меню", callback_data="menu:main")
-    builder.adjust(1)
-    return builder.as_markup()
 
 
 @router.callback_query(F.data == "ai:translate")
@@ -117,15 +108,18 @@ async def show_gpt_menu(callback: CallbackQuery, state: FSMContext) -> None:
 @router.message(GPTStates.waiting_for_question)
 async def process_ai_request(message: Message, state: FSMContext):
     """Обработка AI запросов (редактирование, резюме, общие вопросы)"""
-    text = message.text.strip()
-    data = await state.get_data()
 
     # ДИАГНОСТИКА
     logger.info("=" * 50)
     logger.info("🔍 AI_ASSISTANT ОБНАРУЖИЛ ЗАПРОС!")
     logger.info(f"User ID: {message.from_user.id}")
     logger.info(f"Text: {message.text[:100] if message.text else 'None'}")
-    logger.info("=" * 50)
+    logger.info(f"State: {await state.get_state()}")
+
+    text = message.text.strip()
+    data = await state.get_data()
+
+    logger.info(f"Data from state: {data}")
 
     edit_mode = data.get("edit_mode", False)
     summarize_mode = data.get("summarize_mode", False)

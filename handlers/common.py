@@ -224,9 +224,9 @@ async def handle_voice(message: Message, state: FSMContext):
     # Конвертируем для распознавания
     try:
         import io
-        from pydub import AudioSegment
-        import speech_recognition as sr
+        import speech_recognition as sr  # только это импортируем здесь
 
+        # AudioSegment уже импортирован вверху
         audio = AudioSegment.from_file(io.BytesIO(voice_bytes.read()))
 
         # Распознаем речь
@@ -294,8 +294,16 @@ async def hr_callback_handler(callback: CallbackQuery, state: FSMContext):
 
 
 @router.message()
-async def fallback_handler(message: Message):
+async def fallback_handler(message: Message, state: FSMContext):
     """Catch-all handler for any unprocessed messages"""
+    # Проверяем, есть ли активное состояние
+    current_state = await state.get_state()
+
+    if current_state:
+        # Если есть состояние, не перехватываем сообщение
+        logger.info(f"Сообщение в состоянии {current_state} не обработано fallback'ом")
+        return  # Пропускаем сообщение для других обработчиков
+
     await message.answer(
         "❓ Я не понимаю эту команду.\n\n"
         "Пожалуйста, используйте кнопки меню для навигации:",

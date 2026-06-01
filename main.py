@@ -57,7 +57,7 @@ log_level_str = config.settings.log_level.upper()
 if log_level_str not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
     log_level_str = 'INFO'
 
-    logger.warning(f"Некорректный уровень логирования, используем INFO")
+    print("⚠️ Некорректный уровень логирования, используем INFO")
 
 logging.basicConfig(
     level=getattr(logging, log_level_str),
