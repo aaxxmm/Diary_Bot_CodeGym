@@ -11,3 +11,6 @@ COPY . .
 RUN mkdir -p /app/data
 
 CMD ["python", "main.py"]
+
+# Установка ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*

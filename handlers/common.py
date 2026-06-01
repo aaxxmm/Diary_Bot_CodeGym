@@ -10,6 +10,7 @@ from keyboards.keyboar import main_keyboard, back_keyboard, get_notes_reply_keyb
 from utils.random_picture import fox
 from config import settings
 from states.user_states import GPTStates, TranslateState
+from pydub import AudioSegment
 
 logger = logging.getLogger(__name__)
 
