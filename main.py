@@ -11,7 +11,6 @@ from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from handlers import gpt, ai_assistant, translate
 
 print("========== ENV ==========")
 print(os.environ)

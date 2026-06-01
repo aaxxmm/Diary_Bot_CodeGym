@@ -21,6 +21,9 @@ all_routers = [
     ai_assistant_router,
 ]
 
+# Не экспортируем отдельные модули, только all_routers
+__all__ = ['all_routers']
+
 # Логируем количество подключенных роутеров
 print(f"✅ Загружено {len(all_routers)} роутеров")
 print(f"Роутеры: {[r.name if hasattr(r, 'name') else 'unnamed' for r in all_routers]}")
