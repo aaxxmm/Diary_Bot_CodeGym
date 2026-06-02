@@ -6,8 +6,8 @@ import httpx
 from config import settings
 from pydub import AudioSegment
 
-AudioSegment.converter = "/usr/bin/ffmpeg"
-AudioSegment.ffprobe = "/usr/bin/ffprobe"
+# AudioSegment.converter = "/usr/bin/ffmpeg"
+# AudioSegment.ffprobe = "/usr/bin/ffprobe"
 
 logger = logging.getLogger(__name__)
 

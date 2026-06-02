@@ -13,8 +13,8 @@ from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pydub import AudioSegment
 
-AudioSegment.converter = "/usr/bin/ffmpeg"
-AudioSegment.ffprobe = "/usr/bin/ffprobe"
+# AudioSegment.converter = "/usr/bin/ffmpeg"
+# AudioSegment.ffprobe = "/usr/bin/ffprobe"
 
 import subprocess
 
