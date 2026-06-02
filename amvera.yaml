@@ -7,7 +7,7 @@ build:
   dockerfile: Dockerfile
 
 run:
-  command: python main.py
+  command: python /app/main.py
   persistence:
     - /app/data
 

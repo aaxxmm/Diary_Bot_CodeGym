@@ -16,9 +16,13 @@ COPY . .
 
 # Проверяем установку ffmpeg
 RUN ffmpeg -version || echo "ffmpeg not found"
-
+# Проверяем, что main.py существует
+RUN ls -la && test -f main.py && echo "main.py found" || echo "main.py NOT found"
+# Отладочная информация
+RUN echo "=== Файлы в /app ===" && ls -la /app
+RUN echo "=== Поиск main.py ===" && find /app -name "main.py" -type f
 # Запускаем бота
-CMD ["python", "main.py"]
+CMD ["python", "./main.py"]
 
 
 
