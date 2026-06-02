@@ -1,17 +1,26 @@
-FROM python:3.11-slim
+FROM python:3.14-slim
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Устанавливаем ffmpeg - ЭТО КЛЮЧЕВОЙ МОМЕНТ!
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+
+AudioSegment.converter = "/usr/bin/ffmpeg"
+AudioSegment.ffprobe = "/usr/bin/ffprobe"
 
 WORKDIR /app
 
+# Копируем и устанавливаем зависимости
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Копируем весь проект
 COPY . .
 
+# Проверяем установку ffmpeg
+RUN ffmpeg -version || echo "ffmpeg not found"
+
+# Запускаем бота
 CMD ["python", "main.py"]
 
 

@@ -1,12 +1,16 @@
 meta:
-  environment: docker
-  toolchain:
-    name: docker
-    version: latest
+  toolchain: Docker
+  version: "1.0"
+
 build:
+  type: docker
   dockerfile: Dockerfile
+
 run:
-  persistenceMount: /data
-  # Если вашему приложению (например, боту) не нужно открывать HTTP-порт,
-  # укажите containerPort: null. По умолчанию Amvera ожидает порт 80.
-  containerPort: null
+  command: python main.py
+  persistence:
+    - /app/data
+
+environment:
+  - name: PYTHONUNBUFFERED
+    value: "1"

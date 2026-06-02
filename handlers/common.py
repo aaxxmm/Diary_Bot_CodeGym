@@ -1,6 +1,7 @@
 import io
 import logging
 import speech_recognition as sr
+
 from pydub import AudioSegment
 from aiogram import Router, F
 from aiogram.types import Message, Voice, CallbackQuery
@@ -13,6 +14,22 @@ from keyboards.keyboar import get_notes_reply_keyboard, get_ai_menu, get_hr_menu
 from utils.random_picture import fox
 from config import settings
 from states.user_states import GPTStates, TranslateState
+
+from pydub import AudioSegment
+import shutil
+
+# Явно указываем пути к ffmpeg и ffprobe
+ffmpeg_path = shutil.which('ffmpeg')
+ffprobe_path = shutil.which('ffprobe')
+
+if ffmpeg_path:
+    AudioSegment.converter = ffmpeg_path
+    AudioSegment.ffmpeg = ffmpeg_path
+    print(f"✅ ffmpeg установлен: {ffmpeg_path}")
+
+if ffprobe_path:
+    AudioSegment.ffprobe = ffprobe_path
+    print(f"✅ ffprobe установлен: {ffprobe_path}")
 
 logger = logging.getLogger(__name__)
 
