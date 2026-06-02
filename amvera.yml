@@ -1,0 +1,12 @@
+meta:
+  environment: docker
+  toolchain:
+    name: docker
+    version: latest
+build:
+  dockerfile: Dockerfile
+run:
+  persistenceMount: /data
+  # Если вашему приложению (например, боту) не нужно открывать HTTP-порт,
+  # укажите containerPort: null. По умолчанию Amvera ожидает порт 80.
+  containerPort: null

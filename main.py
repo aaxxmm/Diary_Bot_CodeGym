@@ -12,6 +12,18 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+import subprocess
+
+try:
+    result = subprocess.run(
+        ["ffmpeg", "-version"],
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout[:200])
+except Exception as e:
+    print("FFMPEG ERROR:", e)
+
 print("========== ENV ==========")
 print(os.environ)
 print("=========================")
