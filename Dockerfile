@@ -5,9 +5,6 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
 
-AudioSegment.converter = "/usr/bin/ffmpeg"
-AudioSegment.ffprobe = "/usr/bin/ffprobe"
-
 WORKDIR /app
 
 # Копируем и устанавливаем зависимости
