@@ -11,18 +11,24 @@ from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from pydub import AudioSegment
+
+AudioSegment.converter = "/usr/bin/ffmpeg"
+AudioSegment.ffprobe = "/usr/bin/ffprobe"
 
 import subprocess
 
-try:
-    result = subprocess.run(
-        ["ffmpeg", "-version"],
-        capture_output=True,
-        text=True
-    )
-    print(result.stdout[:200])
-except Exception as e:
-    print("FFMPEG ERROR:", e)
+for cmd in ["ffmpeg", "ffprobe"]:
+    try:
+        result = subprocess.run(
+            [cmd, "-version"],
+            capture_output=True,
+            text=True
+        )
+        print(f"{cmd} OK")
+        print(result.stdout[:200])
+    except Exception as e:
+        print(f"{cmd} ERROR:", e)
 
 print("========== ENV ==========")
 print(os.environ)
@@ -124,7 +130,7 @@ async def on_shutdown(bot: Bot, scheduler: AsyncIOScheduler = None):
     # Останавливаем планировщик
     if scheduler:
         try:
-            scheduler.shutdown(wait=True, timeout=10)
+            scheduler.shutdown(wait=True)
             logger.info("⏸️ Планировщик задач остановлен")
         except Exception as e:
             logger.error(f"Ошибка при остановке планировщика: {e}")
