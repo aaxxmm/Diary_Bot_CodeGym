@@ -169,3 +169,21 @@ async def check_ffmpeg_command(message: Message):
         result += "Обратитесь к администратору для установки ffmpeg."
 
     await message.answer(result)
+
+
+@router.message(F.voice)
+async def test_voice_handler(message: Message, state: FSMContext):
+    """Тестовый обработчик голоса"""
+    logger.info("=" * 50)
+    logger.info("🎤 ПОЛУЧЕНО ГОЛОСОВОЕ СООБЩЕНИЕ")
+    logger.info(f"User: {message.from_user.id}")
+    logger.info(f"State: {await state.get_state()}")
+    logger.info("=" * 50)
+
+    await message.answer(
+        "🎤 Голосовое сообщение получено!\n\n"
+        f"Текущий режим: {await state.get_state() or 'не выбран'}\n\n"
+        "Выберите режим:\n"
+        "• 🌐 Переводчик\n"
+        "• 🤖 AI Помощник"
+    )
