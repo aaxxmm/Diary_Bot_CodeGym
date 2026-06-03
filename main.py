@@ -11,23 +11,27 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pydub import AudioSegment
-
-# AudioSegment.converter = "/usr/bin/ffmpeg"
-# AudioSegment.ffprobe = "/usr/bin/ffprobe"
+from aiogram.client.session.aiohttp import AiohttpSession
 
 import subprocess
 
-for cmd in ["ffmpeg", "ffprobe"]:
-    try:
-        result = subprocess.run(
-            [cmd, "-version"],
-            capture_output=True,
-            text=True
-        )
-        print(f"{cmd} OK")
-        print(result.stdout[:200])
-    except Exception as e:
-        print(f"{cmd} ERROR:", e)
+# for cmd in ["ffmpeg", "ffprobe"]:
+#     try:
+#         result = subprocess.run(
+#             [cmd, "-version"],
+#             capture_output=True,
+#             text=True
+#         )
+#         print(f"{cmd} OK")
+#         print(result.stdout[:200])
+#     except Exception as e:
+#         print(f"{cmd} ERROR:", e)
+
+import shutil
+ffmpeg_path = shutil.which('ffmpeg')
+ffprobe_path = shutil.which('ffprobe')
+print(f"ffmpeg: {'found' if ffmpeg_path else 'NOT found'}")
+print(f"ffprobe: {'found' if ffprobe_path else 'NOT found'}")
 
 print("========== ENV ==========")
 print(os.environ)
@@ -158,6 +162,13 @@ async def main():
         return
 
     TOKEN_TG = config.settings.bot_token
+
+    # Создаем сессию с правильными таймаутами
+    session = AiohttpSession(
+        timeout=60,  # Общий таймаут
+        read_timeout=60,  # Таймаут на чтение
+        connect_timeout=30  # Таймаут на подключение
+    )
 
     # Создаем бота и диспетчер
     bot = Bot(token=TOKEN_TG, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
