@@ -88,10 +88,3 @@ def get_cancel_inline_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
-def get_cancel_inline_keyboard():
-    """Инлайн клавиатура для отмены"""
-    builder = InlineKeyboardBuilder()
-    builder.button(text="❌ Отмена", callback_data="menu:ai")
-    builder.button(text="🏠 Главное меню", callback_data="menu:main")
-    builder.adjust(1)
-    return builder.as_markup()
