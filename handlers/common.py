@@ -187,3 +187,173 @@ async def test_voice_handler(message: Message, state: FSMContext):
         "• 🌐 Переводчик\n"
         "• 🤖 AI Помощник"
     )
+
+
+@router.callback_query(F.data == "menu:main")
+async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
+    """Возврат в главное меню"""
+    await state.clear()
+
+    # Редактируем текущее сообщение
+    await callback.message.edit_text(
+        "🏠 *Главное меню*\n\n"
+        "Выберите нужную функцию:",
+        parse_mode="Markdown"
+    )
+
+    # Отправляем новое сообщение с клавиатурой
+    await callback.message.answer(
+        "Главное меню:",
+        reply_markup=main_keyboard
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu:ai")
+async def show_ai_menu(callback: CallbackQuery, state: FSMContext):
+    """Показать меню AI помощника"""
+    await state.clear()
+
+    await callback.message.edit_text(
+        "🤖 *AI Помощник*\n\n"
+        "Выберите нужную функцию:\n\n"
+        "• 🌐 *Перевод текста* - перевод на любой язык\n"
+        "• ✍️ *Редактирование* - исправление ошибок, улучшение стиля\n"
+        "• 📝 *Резюме* - краткое изложение текста\n\n"
+        "Все функции используют искусственный интеллект GPT.",
+        parse_mode="Markdown",
+        reply_markup=get_ai_menu().as_markup()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu:gpt")
+async def show_gpt_chat(callback: CallbackQuery, state: FSMContext):
+    """Показать чат с GPT"""
+    from states.user_states import GPTStates
+
+    await state.set_state(GPTStates.waiting_for_question)
+    await state.update_data(ai_mode="chat")
+
+    await callback.message.edit_text(
+        "🤖 *Чат с ChatGPT*\n\n"
+        "Задайте мне любой вопрос, и я постараюсь на него ответить!\n\n"
+        "Я могу помочь с:\n"
+        "• Ответами на вопросы\n"
+        "• Советами и рекомендациями\n"
+        "• Объяснением сложных тем\n"
+        "• Переводом текста\n\n"
+        "Просто напишите ваш вопрос ниже:",
+        parse_mode="Markdown",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "ai:translate")
+async def ai_translate_menu(callback: CallbackQuery, state: FSMContext):
+    """Обработчик кнопки перевода в AI меню"""
+    from states.user_states import TranslateState
+
+    await state.set_state(TranslateState.waiting_for_text)
+
+    await callback.message.edit_text(
+        "🌐 *AI Перевод текста*\n\n"
+        "Отправьте текст для перевода.\n\n"
+        "Я переведу его с любого языка на русский (или наоборот).\n\n"
+        "Примеры:\n"
+        "• 'Hello, how are you?'\n"
+        "• 'Привет, как дела?'\n"
+        "• Отправьте голосовое сообщение",
+        parse_mode="Markdown",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "ai:edit")
+async def ai_edit_menu(callback: CallbackQuery, state: FSMContext):
+    """Обработчик кнопки редактирования текста в AI меню"""
+    from states.user_states import GPTStates
+
+    await state.set_state(GPTStates.waiting_for_question)
+    await state.update_data(edit_mode=True, ai_mode="edit")
+
+    await callback.message.edit_text(
+        "✍️ *AI Редактирование текста*\n\n"
+        "Отправьте текст, который нужно отредактировать.\n\n"
+        "Я могу:\n"
+        "• Исправить грамматические ошибки\n"
+        "• Улучшить стиль текста\n"
+        "• Сделать текст более профессиональным\n\n"
+        "Просто напишите текст:",
+        parse_mode="Markdown",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "ai:summarize")
+async def ai_summarize_menu(callback: CallbackQuery, state: FSMContext):
+    """Обработчик кнопки резюме заметок в AI меню"""
+    from states.user_states import GPTStates
+
+    await state.set_state(GPTStates.waiting_for_question)
+    await state.update_data(summarize_mode=True, ai_mode="summarize")
+
+    await callback.message.edit_text(
+        "📝 *AI Резюме текста*\n\n"
+        "Отправьте текст, который нужно сократить или сделать краткое резюме.\n\n"
+        "Я сделаю:\n"
+        "• Краткое изложение основного содержания\n"
+        "• Выделю ключевые моменты\n"
+        "• Сохраню важную информацию\n\n"
+        "Отправьте текст для анализа:",
+        parse_mode="Markdown",
+        reply_markup=get_cancel_inline_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "cancel")
+async def cancel_action(callback: CallbackQuery, state: FSMContext):
+    """Отмена текущего действия"""
+    await state.clear()
+    await callback.message.edit_text(
+        "❌ Действие отменено.\n\n"
+        "Вернуться в главное меню: /start",
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
+@router.callback_query()
+async def unknown_callback(callback: CallbackQuery):
+    """Обработка неизвестных callback-запросов"""
+    logger.warning(f"Неизвестный callback: {callback.data}")
+    await callback.answer("❌ Неизвестная команда", show_alert=False)
+
+
+@router.message(F.text == "🤖 AI Помощник")
+async def ai_menu_text_button(message: Message, state: FSMContext):
+    """Обработка кнопки AI Помощник"""
+    await state.clear()
+    await message.answer(
+        "🤖 *AI Помощник*\n\n"
+        "Выберите нужную функцию:",
+        parse_mode="Markdown",
+        reply_markup=get_ai_menu().as_markup()
+    )
+
+
+@router.message(F.text == "🌐 Переводчик")
+async def translate_text_button(message: Message, state: FSMContext):
+    """Обработка кнопки Переводчик"""
+    from states.user_states import TranslateState
+
+    await state.set_state(TranslateState.waiting_for_text)
+    await message.answer(
+        "🌐 Отправьте текст для перевода:\n\n"
+        "Пример: 'Hello, how are you?'",
+        reply_markup=back_keyboard
+    )
