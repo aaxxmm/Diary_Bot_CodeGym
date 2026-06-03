@@ -357,3 +357,113 @@ async def translate_text_button(message: Message, state: FSMContext):
         "Пример: 'Hello, how are you?'",
         reply_markup=back_keyboard
     )
+
+@router.message(F.text == "🦊 Показать лису")
+async def show_fox_button(message: Message):
+    """Показать лису"""
+    image_fox = await fox()
+    if image_fox:
+        await message.answer_photo(image_fox)
+        await message.answer("🦊 Вот вам лиса! Понравилось?")
+    else:
+        await message.answer("❌ Не удалось получить фото лисы. Попробуйте позже.")
+
+
+@router.message(F.text == "🌤️ Погода")
+async def weather_menu_button(message: Message, state: FSMContext):
+    """Показать меню погоды"""
+    from keyboards.menu import get_weather_menu
+    await state.clear()
+    await message.answer(
+        "🌤️ Выберите действие:",
+        reply_markup=get_weather_menu().as_markup()
+    )
+
+
+@router.message(F.text == "📋 Задачи")
+async def tasks_menu_button(message: Message, state: FSMContext):
+    """Показать меню задач"""
+    from keyboards.menu import get_tasks_menu
+    await state.clear()
+    await message.answer(
+        "📋 Управление задачами:",
+        reply_markup=get_tasks_menu().as_markup()
+    )
+
+
+@router.message(F.text == "🎂 Дни рождения")
+async def birthdays_menu_button(message: Message, state: FSMContext):
+    """Показать меню дней рождений"""
+    from keyboards.menu import get_birthdays_menu
+    await state.clear()
+    await message.answer(
+        "🎂 Управление днями рождения:",
+        reply_markup=get_birthdays_menu().as_markup()
+    )
+
+
+@router.message(F.text == "📝 Заметки")
+async def notes_menu_button(message: Message, state: FSMContext):
+    """Показать меню заметок"""
+    await state.clear()
+    await message.answer(
+        "📝 *Управление заметками*\n\n"
+        "Здесь вы можете создавать, просматривать и управлять своими заметками.",
+        reply_markup=get_notes_reply_keyboard(),
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "💼 HR Рекрутер")
+async def hr_menu_button(message: Message, state: FSMContext):
+    """Показать меню HR рекрутера"""
+    await state.clear()
+    await message.answer(
+        "💼 **HR Рекрутер помощник**\n\n"
+        "Я помогу вам с выбором карьеры и развитием навыков!\n\n"
+        "Доступные команды:\n"
+        "• /prof - выбрать профессию\n"
+        "• /skills - оценить навыки\n"
+        "• /recommend - получить рекомендации",
+        reply_markup=get_hr_menu().as_markup(),
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "ℹ️ Информация")
+async def info_button(message: Message):
+    """Показать информацию о боте"""
+    await message.answer(
+        '🤖 *Информация о боте*\n\n'
+        'Это бот с подключением ChatGPT и функциями:\n'
+        '• 🦊 Случайные фото лис\n'
+        '• 🌤️ Прогноз погоды\n'
+        '• 💬 Общение с ChatGPT\n'
+        '• 📋 Управление задачами\n'
+        '• 🎂 Дни рождения\n'
+        '• 📝 Заметки\n'
+        '• 💼 HR Рекрутер\n'
+        '• 🌐 Переводчик',
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "❓ Помощь")
+async def help_button(message: Message):
+    """Показать помощь"""
+    help_text = (
+        "📋 *Доступные команды:*\n\n"
+        "/start - Начать работу\n"
+        "/help - Показать эту справку\n"
+        "/info - Информация о боте\n"
+        "/fox - Случайное фото лисы\n\n"
+        "🌤️ **Для погоды:**\n"
+        "• Просто напишите название любого города\n\n"
+        "📋 **Для задач:**\n"
+        "• Используйте кнопки в меню задач\n\n"
+        "🎂 **Для дней рождений:**\n"
+        "• Используйте кнопки в меню дней рождений\n\n"
+        "🤖 **Для AI помощника:**\n"
+        "• Используйте кнопку 'AI Помощник' в главном меню"
+    )
+    await message.answer(help_text, parse_mode="Markdown")
