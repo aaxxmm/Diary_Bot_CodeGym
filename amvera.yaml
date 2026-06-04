@@ -1,13 +1,13 @@
 meta:
-  toolchain: Docker
-  version: "1.0"
+  toolchain: Python
+  version: "3.14"
 
 build:
-  type: docker
-  dockerfile: Dockerfile
+  commands:
+    - pip install -r requirements.txt
 
 run:
-  command: python /app/main.py
+  command: python main.py
   persistence:
     - /app/data
 

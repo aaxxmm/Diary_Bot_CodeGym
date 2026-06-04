@@ -10,28 +10,7 @@ from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from pydub import AudioSegment
 from aiogram.client.session.aiohttp import AiohttpSession
-
-import subprocess
-
-# for cmd in ["ffmpeg", "ffprobe"]:
-#     try:
-#         result = subprocess.run(
-#             [cmd, "-version"],
-#             capture_output=True,
-#             text=True
-#         )
-#         print(f"{cmd} OK")
-#         print(result.stdout[:200])
-#     except Exception as e:
-#         print(f"{cmd} ERROR:", e)
-
-import shutil
-ffmpeg_path = shutil.which('ffmpeg')
-ffprobe_path = shutil.which('ffprobe')
-print(f"ffmpeg: {'found' if ffmpeg_path else 'NOT found'}")
-print(f"ffprobe: {'found' if ffprobe_path else 'NOT found'}")
 
 print("========== ENV ==========")
 print(os.environ)
@@ -85,27 +64,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-
-# Проверка ffmpeg при старте
-def check_ffmpeg():
-    import shutil
-    ffmpeg_path = shutil.which('ffmpeg')
-    ffprobe_path = shutil.which('ffprobe')
-
-    if ffmpeg_path:
-        logger.info(f"✅ ffmpeg найден: {ffmpeg_path}")
-    else:
-        logger.warning("❌ ffmpeg НЕ НАЙДЕН! Голосовые сообщения не будут работать")
-
-    if ffprobe_path:
-        logger.info(f"✅ ffprobe найден: {ffprobe_path}")
-    else:
-        logger.warning("❌ ffprobe НЕ НАЙДЕН! Голосовые сообщения не будут работать")
-
-
-# Вызвать после настройки логгера
-check_ffmpeg()
 
 # ============================================
 # ФУНКЦИИ ЗАПУСКА/ОСТАНОВКИ
@@ -171,7 +129,10 @@ async def main():
     )
 
     # Создаем бота и диспетчер
-    bot = Bot(token=TOKEN_TG, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(
+        token=TOKEN_TG,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    session=session)
     dp = Dispatcher()
 
     # Вызываем действия при запуске

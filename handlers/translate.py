@@ -5,27 +5,12 @@ from aiogram import Router, F
 from aiogram.types import Message, Voice
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from pydub import AudioSegment
 import speech_recognition as sr
 
 from typing import cast
 from states.user_states import TranslateState
 from utils.translate_service import translate_text
 from keyboards.keyboar import main_keyboard, back_keyboard
-
-from pydub import AudioSegment
-import shutil
-
-# Явно указываем пути к ffmpeg и ffprobe
-ffmpeg_path = shutil.which('ffmpeg')
-ffprobe_path = shutil.which('ffprobe')
-
-if ffmpeg_path:
-    AudioSegment.converter = ffmpeg_path
-    AudioSegment.ffmpeg = ffmpeg_path
-
-if ffprobe_path:
-    AudioSegment.ffprobe = ffprobe_path
 
 logger = logging.getLogger(__name__)
 router = Router(name="translate")
