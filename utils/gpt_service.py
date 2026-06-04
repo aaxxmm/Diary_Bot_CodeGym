@@ -4,10 +4,7 @@ from typing import Optional
 from openai import AsyncOpenAI
 import httpx
 from config import settings
-from pydub import AudioSegment
 
-# AudioSegment.converter = "/usr/bin/ffmpeg"
-# AudioSegment.ffprobe = "/usr/bin/ffprobe"
 
 logger = logging.getLogger(__name__)
 
@@ -93,3 +90,26 @@ class GPTService:
 
 # Singleton instance
 gpt_service = GPTService()
+
+async def transcribe_audio(self, audio_bytes: bytes) -> Optional[str]:
+    """Транскрипция аудио через Whisper"""
+    if not self.client:
+        return None
+
+    try:
+        import io
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = "voice.ogg"
+
+        transcript = await self.client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            language="ru",
+            response_format="text"
+        )
+
+        return transcript if isinstance(transcript, str) else transcript.text
+
+    except Exception as e:
+        logger.error(f"Whisper error: {e}")
+        return None
