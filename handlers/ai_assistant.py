@@ -7,11 +7,19 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from states.user_states import TranslateState, GPTStates
 from utils.gpt_service import gpt_service
-from keyboards.keyboar import main_keyboard, back_keyboard, get_ai_menu, get_hr_menu
-from handlers.common import get_cancel_inline_keyboard
+from keyboards.keyboar import main_keyboard, get_ai_menu
 
 logger = logging.getLogger(__name__)
 router = Router(name="ai_assistant")
+
+
+def get_cancel_inline_keyboard():
+    """Инлайн клавиатура для отмены"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❌ Отмена", callback_data="menu:ai")
+    builder.button(text="🏠 Главное меню", callback_data="menu:main")
+    builder.adjust(1)
+    return builder.as_markup()
 
 
 @router.callback_query(F.data == "ai:translate")
@@ -80,7 +88,7 @@ async def show_gpt_menu(callback: CallbackQuery, state: FSMContext) -> None:
     logger.info("🟢 show_gpt_menu вызван")
 
     await state.set_state(GPTStates.waiting_for_question)
-    await state.update_data(ai_mode="chat")  # Добавляем режим чата
+    await state.update_data(ai_mode="chat", edit_mode=False, summarize_mode=False)
 
     # Проверяем состояние
     current_state = await state.get_state()
@@ -105,79 +113,48 @@ async def show_gpt_menu(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
 
 
-@router.message(GPTStates.waiting_for_question)
+@router.message(GPTStates.waiting_for_question, F.text)
 async def process_ai_request(message: Message, state: FSMContext):
-    """Обработка AI запросов (редактирование, резюме, общие вопросы)"""
-
-    # ДИАГНОСТИКА
-    logger.info("=" * 50)
-    logger.info("🔍 AI_ASSISTANT ОБНАРУЖИЛ ЗАПРОС!")
-    logger.info(f"User ID: {message.from_user.id}")
-    logger.info(f"Text: {message.text[:100] if message.text else 'None'}")
-    logger.info(f"State: {await state.get_state()}")
+    """Обработка AI запросов (только текст)"""
 
     text = message.text.strip()
+
+    if not text:
+        await message.answer("❌ Пожалуйста, напишите вопрос или текст для обработки.")
+        return
+
+    # Получаем данные из состояния
     data = await state.get_data()
-
-    logger.info(f"Data from state: {data}")
-
+    user_name = data.get("user_name", message.from_user.first_name)
     edit_mode = data.get("edit_mode", False)
     summarize_mode = data.get("summarize_mode", False)
 
-    # Показываем индикатор набора текста
-    await message.bot.send_chat_action(
-        chat_id=message.chat.id,
-        action="typing"
-    )
+    # Показываем, что бот печатает
+    await message.bot.send_chat_action(message.chat.id, "typing")
 
-    # Отправляем сообщение "Думаю..."
-    thinking_msg = await message.answer("🤔 <b>Обрабатываю запрос...</b>\n\nПожалуйста, подождите...")
+    try:
+        if edit_mode:
+            prompt = f"Отредактируй следующий текст, исправь ошибки, сделай более понятным. Пользователя зовут {user_name}:\n\n{text}"
+            response = await gpt_service.get_response(prompt)
+            await message.answer(f"✍️ *Отредактированный текст:*\n\n{response}", parse_mode="Markdown")
 
-    # Формируем промпт в зависимости от режима
-    if edit_mode:
-        prompt = f"Отредактируй следующий текст: исправь грамматические и стилистические ошибки, сделай его более понятным и профессиональным. Верни только отредактированный текст, без пояснений:\n\n{text}"
-        response_prefix = "✍️ <b>Отредактированный текст:</b>\n\n"
-    elif summarize_mode:
-        prompt = f"Сделай краткое резюме следующего текста. Выдели основные мысли и ключевую информацию. Верни только резюме, без пояснений:\n\n{text}"
-        response_prefix = "📝 <b>Резюме:</b>\n\n"
-    else:
-        prompt = text
-        response_prefix = "🤖 <b>Ответ:</b>\n\n"
+        elif summarize_mode:
+            prompt = f"Сделай краткое резюме текста. Пользователя зовут {user_name}:\n\n{text}"
+            response = await gpt_service.get_response(prompt)
+            await message.answer(f"📝 *Резюме:*\n\n{response}", parse_mode="Markdown")
 
-    # Получаем ответ от GPT
-    response = await gpt_service.get_response(prompt, max_tokens=1500, temperature=0.7)
-
-    if response and not response.startswith("❌"):
-        if len(response) > 4000:
-            parts = [response[i:i + 4000] for i in range(0, len(response), 4000)]
-            await thinking_msg.edit_text(
-                text=f"{response_prefix}{parts[0]}"
-            )
-            for part in parts[1:]:
-                await message.answer(part)
         else:
-            await thinking_msg.edit_text(
-                text=f"{response_prefix}{response}"
-            )
-    else:
-        await thinking_msg.edit_text(
-            text=f"❌ <b>Ошибка</b>\n\n{response if response else 'Не удалось обработать запрос. Пожалуйста, попробуйте позже.'}"
-        )
+            # Обычный чат с GPT с персонализацией
+            prompt = f"Пользователя зовут {user_name}. Ответь на вопрос, обращаясь по имени: {text}"
+            response = await gpt_service.get_response(prompt)
+            await message.answer(f"🤖 {response}", parse_mode="Markdown")
 
-    # Показываем клавиатуру для продолжения
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔄 Новый запрос", callback_data="menu:ai")
-    builder.button(text="🤖 Чат с GPT", callback_data="menu:gpt")
-    builder.button(text="🏠 Главное меню", callback_data="menu:main")
-    builder.adjust(1)
+        # Очищаем состояние после обработки
+        await state.clear()
 
-    await message.answer(
-        "Что делаем дальше?",
-        reply_markup=builder.as_markup()
-    )
-
-    await state.clear()
-    logger.info(f"AI request processed for user {message.from_user.id}")
+    except Exception as e:
+        logger.error(f"AI обработка ошибка: {e}")
+        await message.answer(f"❌ {user_name}, произошла ошибка: {str(e)[:100]}")
 
 
 @router.callback_query(F.data == "menu:ai")
@@ -227,24 +204,3 @@ async def clear_gpt_state(callback: CallbackQuery, state: FSMContext) -> None:
         reply_markup=get_cancel_inline_keyboard()
     )
     await callback.answer()
-
-
-@router.message(GPTStates.waiting_for_question)
-async def process_gpt_question(message: Message, state: FSMContext):
-    """Обработка вопросов к GPT"""
-    data = await state.get_data()
-    user_name = data.get("user_name", "друг")
-
-    # Показываем, что бот печатает
-    await message.bot.send_chat_action(message.chat.id, "typing")
-
-    # Получаем вопрос
-    question = message.text
-
-    # Добавляем персонализацию в промпт
-    personalized_prompt = f"Пользователя зовут {user_name}. Ответь на вопрос, обращаясь по имени: {question}"
-
-    # Отправляем в GPT
-    response = await gpt_service.get_response(personalized_prompt)
-
-    await message.answer(f"🤖 {response}")
