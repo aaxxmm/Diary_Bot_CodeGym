@@ -10,7 +10,6 @@ from aiogram.types import BotCommand
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiogram.client.session.aiohttp import AiohttpSession
 
 print("========== ENV ==========")
 print(os.environ)
@@ -121,18 +120,10 @@ async def main():
 
     TOKEN_TG = config.settings.bot_token
 
-    # Создаем сессию с правильными таймаутами
-    session = AiohttpSession(
-        timeout=60,  # Общий таймаут
-        read_timeout=60,  # Таймаут на чтение
-        connect_timeout=30  # Таймаут на подключение
-    )
-
     # Создаем бота и диспетчер
     bot = Bot(
         token=TOKEN_TG,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    session=session)
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
 
     # Вызываем действия при запуске
