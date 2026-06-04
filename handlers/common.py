@@ -8,11 +8,11 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from openai import AsyncOpenAI
 
 from keyboards import main_keyboard, back_keyboard
-from keyboards.keyboar import get_notes_reply_keyboard, get_ai_menu, get_hr_menu
 from utils import gpt_service
 from utils.random_picture import fox
 from config import settings
 from states.user_states import GPTStates, TranslateState
+from keyboards.keyboar import get_ai_menu, get_hr_menu, get_notes_reply_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -396,3 +396,15 @@ async def help_button(message: Message):
         "• Используйте кнопку 'AI Помощник' в главном меню"
     )
     await message.answer(help_text, parse_mode="Markdown")
+
+@router.message()
+async def catch_all_messages(message: Message, state: FSMContext):
+    """Отладка: ловим все сообщения"""
+    logger.info(f"Получено сообщение: {message.text}")
+    logger.info(f"Состояние: {await state.get_state()}")
+    # Не отвечаем, чтобы не мешать другим обработчикам
+
+@router.message(Command("ping"))
+async def ping(message: Message):
+    """Проверка работоспособности"""
+    await message.answer("🏓 Pong! Бот работает.")
