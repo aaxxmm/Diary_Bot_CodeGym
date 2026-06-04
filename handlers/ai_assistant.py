@@ -227,3 +227,24 @@ async def clear_gpt_state(callback: CallbackQuery, state: FSMContext) -> None:
         reply_markup=get_cancel_inline_keyboard()
     )
     await callback.answer()
+
+
+@router.message(GPTStates.waiting_for_question)
+async def process_gpt_question(message: Message, state: FSMContext):
+    """Обработка вопросов к GPT"""
+    data = await state.get_data()
+    user_name = data.get("user_name", "друг")
+
+    # Показываем, что бот печатает
+    await message.bot.send_chat_action(message.chat.id, "typing")
+
+    # Получаем вопрос
+    question = message.text
+
+    # Добавляем персонализацию в промпт
+    personalized_prompt = f"Пользователя зовут {user_name}. Ответь на вопрос, обращаясь по имени: {question}"
+
+    # Отправляем в GPT
+    response = await gpt_service.get_response(personalized_prompt)
+
+    await message.answer(f"🤖 {response}")

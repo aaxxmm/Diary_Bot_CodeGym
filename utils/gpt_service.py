@@ -113,3 +113,25 @@ async def transcribe_audio(self, audio_bytes: bytes) -> Optional[str]:
     except Exception as e:
         logger.error(f"Whisper error: {e}")
         return None
+
+
+async def get_response_with_context(system_prompt: str, history: list, new_message: str) -> str:
+    """Получить ответ от GPT с контекстом диалога"""
+    try:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            *history,
+            {"role": "user", "content": new_message}
+        ]
+
+        response = await client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=1000,
+            temperature=0.7
+        )
+
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"GPT ошибка: {e}")
+        return f"❌ Ошибка: {str(e)}"

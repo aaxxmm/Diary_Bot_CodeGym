@@ -12,7 +12,8 @@ from utils import gpt_service
 from utils.random_picture import fox
 from config import settings
 from states.user_states import GPTStates, TranslateState
-from keyboards.keyboar import get_ai_menu, get_hr_menu, get_notes_reply_keyboard
+from keyboards.keyboar import get_ai_menu, get_hr_menu, get_notes_reply_keyboard, get_cancel_inline_keyboard
+
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -21,9 +22,59 @@ router = Router()
 openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 
+# ============= КОМАНДА START (ДОБАВИТЬ СЮДА) =============
+@router.message(Command("start"))
+async def cmd_start(message: Message, state: FSMContext):
+    """Обработчик команды /start"""
+    await state.clear()
+
+    # Получаем имя пользователя
+    user_name = message.from_user.first_name
+    if message.from_user.last_name:
+        user_name = f"{message.from_user.first_name} {message.from_user.last_name}"
+
+    # Сохраняем данные пользователя в состояние
+    await state.update_data(
+        user_name=user_name,
+        user_id=message.from_user.id,
+        username=message.from_user.username
+    )
+
+    # Приветственное сообщение с именем
+    welcome_text = (
+        f"👋 *Добро пожаловать, {user_name}!*\n\n"
+        f"Я помогу вам с:\n"
+        f"• 📝 Заметками\n"
+        f"• 📋 Задачами\n"
+        f"• 🎂 Днями рождения\n"
+        f"• 🤖 AI помощником (ChatGPT)\n"
+        f"• 🌐 Переводом текста\n"
+        f"• 💼 HR рекомендациями\n\n"
+        f"Чем могу помочь сегодня?"
+    )
+
+    await message.answer(
+        welcome_text,
+        parse_mode="Markdown",
+        reply_markup=main_keyboard
+    )
+
+def get_user_name(message: Message, state_data: dict = None) -> str:
+    """Получить имя пользователя из разных источников"""
+    if state_data and state_data.get("user_name"):
+        return state_data["user_name"]
+    if message.from_user.last_name:
+        return f"{message.from_user.first_name} {message.from_user.last_name}"
+    return message.from_user.first_name or "друг"
+
+
 @router.message(F.voice)
 async def handle_voice_whisper(message: Message, state: FSMContext):
     """Обработка голосовых сообщений через Whisper API"""
+
+    # Получаем имя пользователя из состояния
+    data = await state.get_data()
+    user_name = data.get("user_name", message.from_user.first_name)
 
     current_state = await state.get_state()
     is_translate_mode = (current_state == TranslateState.waiting_for_text)
@@ -31,38 +82,42 @@ async def handle_voice_whisper(message: Message, state: FSMContext):
 
     if not is_translate_mode and not is_ai_mode:
         await message.answer(
-            "🎤 Сначала выберите режим:\n"
+            f"🎤 {user_name}, сначала выберите режим:\n"
             "• 🌐 Переводчик\n"
             "• 🤖 AI Помощник"
         )
         return
 
-    processing_msg = await message.answer("🎤 Распознаю голосовое сообщение через Whisper...")
+    processing_msg = await message.answer(f"🎤 Слушаю, {user_name}... Распознаю голосовое сообщение...")
 
     try:
         # Скачиваем голосовое сообщение
         file = await message.bot.get_file(message.voice.file_id)
+
+        # Скачиваем файл в bytes
         voice_bytes = await message.bot.download_file(file.file_path)
 
-        # Отправляем в Whisper API
+        # ВАЖНО: преобразуем bytes в BytesIO и правильно именуем файл
         audio_file = io.BytesIO(voice_bytes.read())
-        audio_file.name = "voice.ogg"
+        audio_file.name = f"voice_{message.from_user.id}.ogg"
+
+        # Сбрасываем указатель в начало
+        audio_file.seek(0)
 
         # Используем OpenAI Whisper для распознавания
         transcript = await openai_client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_file,
-            language="ru",
-            response_format="text"
+            language="ru"
         )
 
-        recognized_text = transcript if isinstance(transcript, str) else transcript.text
+        # Получаем распознанный текст
+        recognized_text = transcript.text
 
-        await processing_msg.edit_text(f"🎤 Распознано: {recognized_text}")
+        await processing_msg.edit_text(f"🎤 {user_name}, вы сказали: {recognized_text}")
 
         # Обработка в зависимости от режима
         if is_translate_mode:
-            # Переводим через GPT
             prompt = f"Переведи следующий текст на русский язык (если текст не на русском) или исправь ошибки (если на русском):\n\n{recognized_text}"
             translation = await gpt_service.get_response(prompt, max_tokens=500, temperature=0.3)
 
@@ -73,7 +128,7 @@ async def handle_voice_whisper(message: Message, state: FSMContext):
                     parse_mode="Markdown"
                 )
             else:
-                await message.answer(f"❌ Не удалось обработать текст.\n\n{translation}")
+                await message.answer(f"❌ {user_name}, не удалось обработать текст.\n\n{translation}")
 
         elif is_ai_mode:
             data = await state.get_data()
@@ -81,10 +136,10 @@ async def handle_voice_whisper(message: Message, state: FSMContext):
             summarize_mode = data.get("summarize_mode", False)
 
             if edit_mode:
-                prompt = f"Отредактируй следующий текст: исправь ошибки, сделай более понятным:\n\n{recognized_text}"
+                prompt = f"Отредактируй следующий текст, исправь ошибки, сделай более понятным. Пользователя зовут {user_name}:\n\n{recognized_text}"
                 response_prefix = "✍️ Отредактированный текст:\n\n"
             elif summarize_mode:
-                prompt = f"Сделай краткое резюме текста:\n\n{recognized_text}"
+                prompt = f"Сделай краткое резюме текста. Пользователя зовут {user_name}:\n\n{recognized_text}"
                 response_prefix = "📝 Резюме:\n\n"
             else:
                 prompt = recognized_text
@@ -95,44 +150,41 @@ async def handle_voice_whisper(message: Message, state: FSMContext):
             if response and not response.startswith("❌"):
                 await message.answer(f"{response_prefix}{response}", parse_mode="Markdown")
             else:
-                await message.answer(f"❌ Ошибка: {response}")
+                await message.answer(f"❌ {user_name}, ошибка: {response}")
 
         await state.clear()
 
     except Exception as e:
         logger.error(f"Whisper ошибка: {e}")
         await processing_msg.edit_text(
-            "❌ Не удалось распознать голосовое сообщение.\n\n"
+            f"❌ {user_name}, не удалось распознать голосовое сообщение.\n\n"
+            f"Ошибка: {str(e)[:100]}\n\n"
             "Попробуйте:\n"
             "• Говорить четче\n"
             "• Отправить текстовое сообщение"
         )
-
-
-def get_cancel_inline_keyboard():
-    """Инлайн клавиатура для отмены"""
-    builder = InlineKeyboardBuilder()
-    builder.button(text="❌ Отмена", callback_data="menu:ai")
-    builder.button(text="🏠 Главное меню", callback_data="menu:main")
-    builder.adjust(1)
-    return builder.as_markup()
 
 @router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     """Обработчик команды /start"""
     await state.clear()
 
-    # Приветственное сообщение
+    # Получаем имя пользователя
+    user_name = message.from_user.first_name
+    if message.from_user.last_name:
+        user_name = f"{message.from_user.first_name} {message.from_user.last_name}"
+
+    # Приветственное сообщение с именем
     welcome_text = (
-        "👋 *Добро пожаловать в бот!*\n\n"
-        "Я помогу вам с:\n"
-        "• 📝 Заметками\n"
-        "• 📋 Задачами\n"
-        "• 🎂 Днями рождения\n"
-        "• 🤖 AI помощником (ChatGPT)\n"
-        "• 🌐 Переводом текста\n"
-        "• 💼 HR рекомендациями\n\n"
-        "Используйте кнопки ниже для навигации:"
+        f"👋 *Добро пожаловать, {user_name}!*\n\n"
+        f"Я помогу вам с:\n"
+        f"• 📝 Заметками\n"
+        f"• 📋 Задачами\n"
+        f"• 🎂 Днями рождения\n"
+        f"• 🤖 AI помощником (ChatGPT)\n"
+        f"• 🌐 Переводом текста\n"
+        f"• 💼 HR рекомендациями\n\n"
+        f"Чем могу помочь сегодня?"
     )
 
     await message.answer(
@@ -427,6 +479,36 @@ async def ping(message: Message):
     """Проверка работоспособности"""
     await message.answer("🏓 Pong! Бот работает.")
 
+
+# Добавьте сохранение истории диалога
+@router.message(GPTStates.waiting_for_question)
+async def process_gpt_question(message: Message, state: FSMContext):
+    data = await state.get_data()
+    user_name = data.get("user_name", message.from_user.first_name)
+
+    # Сохраняем историю
+    history = data.get("conversation_history", [])
+    history.append({"role": "user", "content": message.text})
+
+    # Ограничиваем историю последними 10 сообщениями
+    if len(history) > 10:
+        history = history[-10:]
+
+    # Добавляем системный промпт с именем пользователя
+    system_prompt = f"Ты дружелюбный AI ассистент. Пользователя зовут {user_name}. Всегда обращайся к нему по имени в ответах."
+
+    # Отправляем в GPT с контекстом
+    response = await gpt_service.get_response_with_context(
+        system_prompt=system_prompt,
+        history=history,
+        new_message=message.text
+    )
+
+    # Сохраняем ответ в историю
+    history.append({"role": "assistant", "content": response})
+    await state.update_data(conversation_history=history)
+
+    await message.answer(f"🤖 {response}")
 
 @router.callback_query()
 async def debug_callbacks(callback: CallbackQuery):
