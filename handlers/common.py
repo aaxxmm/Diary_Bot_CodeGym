@@ -117,6 +117,29 @@ def get_cancel_inline_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
+@router.message(Command("start"))
+async def cmd_start(message: Message, state: FSMContext):
+    """Обработчик команды /start"""
+    await state.clear()
+
+    # Приветственное сообщение
+    welcome_text = (
+        "👋 *Добро пожаловать в бот!*\n\n"
+        "Я помогу вам с:\n"
+        "• 📝 Заметками\n"
+        "• 📋 Задачами\n"
+        "• 🎂 Днями рождения\n"
+        "• 🤖 AI помощником (ChatGPT)\n"
+        "• 🌐 Переводом текста\n"
+        "• 💼 HR рекомендациями\n\n"
+        "Используйте кнопки ниже для навигации:"
+    )
+
+    await message.answer(
+        welcome_text,
+        parse_mode="Markdown",
+        reply_markup=main_keyboard
+    )
 
 @router.callback_query(F.data == "menu:main")
 async def back_to_main_menu(callback: CallbackQuery, state: FSMContext):
@@ -397,12 +420,7 @@ async def help_button(message: Message):
     )
     await message.answer(help_text, parse_mode="Markdown")
 
-@router.message()
-async def catch_all_messages(message: Message, state: FSMContext):
-    """Отладка: ловим все сообщения"""
-    logger.info(f"Получено сообщение: {message.text}")
-    logger.info(f"Состояние: {await state.get_state()}")
-    # Не отвечаем, чтобы не мешать другим обработчикам
+
 
 @router.message(Command("ping"))
 async def ping(message: Message):
