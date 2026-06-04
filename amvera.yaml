@@ -1,16 +1,13 @@
 meta:
-  toolchain: Python
-  version: "3.14"
-
+  environment: python
+  toolchain:
+    name: pip
+    version: 3.14
 build:
-  commands:
-    - pip install -r requirements.txt
-
+  requirementsPath: requirements.txt
+  useCache: true
 run:
-  command: python main.py
-  persistence:
-    - /app/data
-
-environment:
-  - name: PYTHONUNBUFFERED
-    value: "1"
+  persistenceMount: /data
+  scriptName: main.py
+  containerPort: 80
+  servicePort: 80
