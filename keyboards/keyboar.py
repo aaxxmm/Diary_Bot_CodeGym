@@ -88,3 +88,19 @@ def get_cancel_inline_keyboard():
     builder.adjust(1)
     return builder.as_markup()
 
+def get_ai_menu() -> InlineKeyboardBuilder:
+    """Меню AI помощника"""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🌐 Перевод текста", callback_data="ai:translate")
+    builder.button(text="✍️ Редактирование текста", callback_data="ai:edit")
+    builder.button(text="📝 Резюме текста", callback_data="ai:summarize")
+    builder.button(text="💬 Чат с GPT", callback_data="menu:gpt")  # ← Добавьте эту строку
+    builder.button(text="◀️ Назад", callback_data="menu:main")
+    builder.adjust(1)
+    return builder
+
+# Временная диагностика - добавьте в конец keyboar.py
+print("=" * 50)
+print("КЛАВИАТУРА ЗАГРУЖЕНА")
+print(f"Кнопки главного меню: {[btn.text for row in main_keyboard.keyboard for btn in row]}")
+print("=" * 50)

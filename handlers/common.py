@@ -408,3 +408,57 @@ async def catch_all_messages(message: Message, state: FSMContext):
 async def ping(message: Message):
     """Проверка работоспособности"""
     await message.answer("🏓 Pong! Бот работает.")
+
+
+@router.callback_query()
+async def debug_callbacks(callback: CallbackQuery):
+    """Отладка всех callback запросов"""
+    logger.info(f"🔘 Получен callback: '{callback.data}'")
+    logger.info(f"   От пользователя: {callback.from_user.id}")
+    logger.info(f"   Сообщение: {callback.message.text[:100] if callback.message.text else 'None'}")
+
+    # Отвечаем, чтобы кнопка не "висела"
+    await callback.answer(f"Получен callback: {callback.data}", show_alert=False)
+
+
+@router.message(F.text)
+async def debug_text_buttons(message: Message, state: FSMContext):
+    """Отладка текстовых кнопок"""
+    logger.info(f"🔘 Нажата кнопка: '{message.text}'")
+
+    # Словарь соответствия кнопок и их обработчиков
+    button_handlers = {
+        "🤖 AI Помощник": "ai_menu_text_button",
+        "🌐 Переводчик": "translate_text_button",
+        "🦊 Показать лису": "show_fox_button",
+        "🌤️ Погода": "weather_menu_button",
+        "📋 Задачи": "tasks_menu_button",
+        "🎂 Дни рождения": "birthdays_menu_button",
+        "📝 Заметки": "notes_menu_button",
+        "💼 HR Рекрутер": "hr_menu_button",
+        "ℹ️ Информация": "info_button",
+        "❓ Помощь": "help_button",
+    }
+
+
+@router.message()
+async def catch_all_messages(message: Message, state: FSMContext):
+    """Отладка: ловим все сообщения"""
+    current_state = await state.get_state()
+
+    logger.info("=" * 60)
+    logger.info(f"📨 ПОЛУЧЕНО СООБЩЕНИЕ:")
+    logger.info(f"   Текст: '{message.text}'")
+    logger.info(f"   Тип: {message.content_type}")
+    logger.info(f"   От пользователя: {message.from_user.id}")
+    logger.info(f"   Состояние: {current_state}")
+    logger.info("=" * 60)
+
+    # Отвечаем на неизвестные команды
+    if message.text and not message.text.startswith('/'):
+        await message.answer(
+            f"❓ Я получил сообщение: '{message.text}'\n\n"
+            f"Состояние: {current_state or 'не выбрано'}\n\n"
+            f"Пожалуйста, используйте кнопки меню для навигации.",
+            reply_markup=main_keyboard
+        )
