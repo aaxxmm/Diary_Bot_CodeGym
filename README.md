@@ -1,6 +1,6 @@
 Diary Bot — Многофункциональный Telegram-бот
 
-[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
+[![Python 3.14](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
 [![aiogram](https://img.shields.io/badge/aiogram-3.4.1-green.svg)](https://docs.aiogram.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -15,8 +15,10 @@ Telegram-бот для ведения заметок, управления за�
 - 🤖 **AI помощник** — перевод, редактирование текста, резюмирование заметок (GPT)
 - 💼 **HR рекрутер** — выбор профессии и оценка навыков
 - 🦊 **Случайная лиса** — получение случайных картинок с лисами
+- 🎤 **Голосовые сообщения** — распознавание речи через Whisper API
 
-### Локальный запуск
+
+## 🚀 Локальный запуск
 
 1. **Клонируйте репозиторий**
    ```bash
@@ -46,72 +48,100 @@ Telegram-бот для ведения заметок, управления за�
     cp .env.example .env
     # Отредактируйте .env, добавьте ваш токен Telegram
 
+### Необходимые переменные:
+
+   TOKEN_TG — токен Telegram бота (обязательно)
+
+   TOKEN_OPENAI — API ключ OpenAI (для GPT и Whisper)
+   
+   WEATHER_APP_TOKEN — API ключ OpenWeatherMap
+   
+   ADMIN_USER_ID — ваш Telegram ID (для администрирования)
+
+### Запустите бота
+   
+   python main.py
+
 ###  структура проекта
 
     diary_bot_CodeGym/
     │
-    ├── .github/                          
+    ├── .github/                    # GitHub Actions (CI/CD)                     
     │   └── workflows/
     │       └── deploy.yml
     │
-    ├── handlers/                        
-    │   ├── __init__.py
-    │   ├── ai_assistant.py
-    │   ├── birthdays.py
-    │   ├── career_choice.py
-    │   ├── common.py
-    │   ├── gpt.py
-    │   ├── notes.py
-    │   ├── tasks.py
-    │   ├── translate.py
-    │   └── weather.py
+    ├── handlers/                         # Обработчики команд и сообщений
+    │   ├── __init__.py                   # Экспорт всех роутеров
+    │   ├── ai_assistant.py               # AI функции (GPT, перевод, редактирование)
+    │   ├── birthdays.py                  # Дни рождения (CRUD, уведомления)
+    │   ├── career_choice.py              # HR рекрутер (профессии, навыки)
+    │   ├── common.py                     # Общие команды (/start, /help, кнопки)
+    │   ├── error_handler.py              # Глобальная обработка ошибок
+    │   ├── notes.py                      # Заметки (CRUD, теги, поиск)
+    │   ├── tasks.py                      # Задачи (CRUD, дедлайны)
+    │   ├── translate.py                  # Перевод текста (через GPT)
+    │   └── weather.py                    # Погода (текущая, прогноз)
     │
-    ├── keyboards/                     
+    ├── keyboards/                        # Клавиатуры (Reply и Inline)                   
+    │   ├── __init__.py                   # Экспорт клавиатур
+    │   ├── keyboard.py                   # Основные клавиатуры
+    │   ├── menu.py                       # Меню для задач, погоды, дней рождения
+    │   └── prof_keyboards.py             # Клавиатуры для HR рекрутера
+    │             
+    ├── scheduler/                        # Фоновые задачи                   
     │   ├── __init__.py
-    │   ├── keyboard.py                  
-    │   ├── menu.py
-    │   └── prof_keyboards.py
+    │   └── tasks.py                      # Проверка дедлайнов и дней рождений
     │
-    ├── scheduler/                        
-    │   ├── __init__.py
-    │   └── tasks.py
+    ├── states/                           # FSM состояния (конечные автоматы)                          
+    │   ├── __init__.py                   # Экспорт состояний
+    │   └──  user_states.py               # Все состояния (задачи, заметки, GPT и др.)
+
     │
-    ├── states/                          
-    │   ├── __init__.py
-    │   ├── gpt_service1.py
-    │   ├── translate_states.py
-    │   ├── user_states.py
-    │   └── weather_states.py
+    ├── utils/                            # Утилиты и сервисы                            
+    │   ├── __init__.py                   # Экспорт утилит
+    │   ├── gpt_service.py                # Работа с OpenAI API (GPT, Whisper)
+    │   ├── random_picture.py             # Получение фото лис
+    │   └── translate_service.py          # Перевод текста через GPT
     │
-    ├── utils/                            
-    │   ├── __init__.py
-    │   ├── gpt_service.py
-    │   ├── random_picture.py
-    │   └── translate_service.py
-    │
-    ├── data/                             
-    │   ├── notes.json
+    ├── data/                             # Хранилище данных (JSON)                             
+    │   ├── notes.json                    # Заметки пользователей
     │   └── .gitkeep                     
     │
-    ├── .env.example                      
-    ├── .gitignore                        
-    ├── config.py                         
-    ├── main.py                           
-    ├── models.py                         
-    ├── requirements.txt                 
-    ├── README.md                         
-    ├── amvera.yml                        
-    ├── Dockerfile                       
-    └── LICENSE            
+    ├── .env.example                      # Пример переменных окружения                      
+    ├── .gitignore                        # Исключения для Git                        
+    ├── config.py                         # Конфигурация и настройки                         
+    ├── main.py                           # Точка входа (запуск бота)                           
+    ├── models.py                         # Модели данных (Task, Birthday) и Storage                         
+    ├── requirements.txt                  # Зависимости Python                 
+    ├── README.md                         # Документация                         
+    ├── amvera.yml                        # Конфигурация для деплоя на Amvera                        
+    ├── Dockerfile                        # Docker контейнер                       
+    └── LICENSE                           # Лицензия MIT            
 
-📄 Лицензия
+###   🛠️ Технологии
+Python 3.11 — язык программирования
+
+aiogram 3.x — фреймворк для Telegram Bot API
+
+OpenAI API — GPT-3.5/4 для AI функций и Whisper для распознавания речи
+
+OpenWeatherMap API — погода
+
+APScheduler — фоновые задачи (напоминания)
+
+aiohttp — асинхронные HTTP запросы
+
+###  📄 Лицензия
 Распространяется под лицензией MIT. Смотрите файл LICENSE для подробностей.
 
-🙏 Благодарности
+###  🙏 Благодарности
 BotFather за создание ботов
 
 Amvera Cloud за хостинг
 
-OpenAI за GPT API
+OpenAI за GPT API и Whisper
 
-⭐ Не забудьте поставить звезду, если проект был полезен!
+###  ⭐ Обратная связь
+Если проект был полезен, поставьте звезду на GitHub!
+
+По вопросам и предложениям: Telegram
