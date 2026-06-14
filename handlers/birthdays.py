@@ -228,7 +228,7 @@ async def delete_birthday(callback: CallbackQuery):
     birthday_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if await storage.delete_birthday(user_id, birthday_id):
+    if storage.delete_birthday(user_id, birthday_id):
         await callback.answer("✅ День рождения удален!")
         await show_birthdays_menu(callback, None)
     else:
@@ -270,7 +270,7 @@ async def toggle_birthday_notification(callback: CallbackQuery):
     birthday_id = int(callback.data.split(":")[2])
     user_id = callback.from_user.id
 
-    if await storage.toggle_birthday_notification(user_id, birthday_id):
+    if storage.toggle_birthday_notification(user_id, birthday_id):
         await callback.answer("Настройки обновлены!")
         await show_birthday_settings(callback)
     else:

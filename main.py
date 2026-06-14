@@ -1,3 +1,4 @@
+# запуск бота
 import asyncio
 import logging
 import sys
@@ -32,7 +33,7 @@ print("=" * 50)
 # Проверяем конкретно TOKEN_TG
 tg_token = os.getenv("TOKEN_TG")
 print(f"🔍 TOKEN_TG = {tg_token[:20] if tg_token else 'НЕ НАЙДЕН'}...")
-# ЗАДЕРЖКА ПРИ СТАРТЕ (важно для Amvera!)
+# ЗАДЕРЖКА ПРИ СТАРТЕ (для Amvera)
 # ============================================
 time.sleep(7)
 

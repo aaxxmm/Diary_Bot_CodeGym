@@ -1,6 +1,7 @@
 
 import logging
-from typing import Optional
+
+from typing import Optional, List, Dict
 from openai import AsyncOpenAI
 import httpx
 from config import settings
@@ -82,56 +83,50 @@ class GPTService:
                 return "❌ Неверный API ключ OpenAI. Проверьте TOKEN_OPENAI в настройках."
             return f"❌ Ошибка: {str(e)}"
 
+    async def get_response_with_context(
+            self,
+            system_prompt: str,
+            history: List[Dict[str, str]],
+            new_message: str
+    ) -> str:
+        """Get response from GPT with conversation context"""
+        if not self.client:
+            return "❌ OpenAI API не настроен."
+
+        try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                *history,
+                {"role": "user", "content": new_message}
+            ]
+
+            response = await self.client.chat.completions.create(
+                model=settings.openai_model,
+                messages=messages,
+                max_tokens=settings.max_tokens,
+                temperature=0.7
+            )
+
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"GPT error: {e}")
+            return f"❌ Ошибка: {str(e)}"
+
     async def close(self):
         """Close HTTP client"""
         if self.client and hasattr(self.client, '_client'):
             await self.client._client.aclose()
 
 
+    async def health_check(self) -> bool:
+        """Проверка доступности OpenAI API"""
+        if not self.client:
+            return False
+        try:
+            response = await self.get_response("Say 'OK'", max_tokens=5)
+            return response is not None and "OK" in response
+        except:
+            return False
+
 # Singleton instance
 gpt_service = GPTService()
-
-async def transcribe_audio(self, audio_bytes: bytes) -> Optional[str]:
-    """Транскрипция аудио через Whisper"""
-    if not self.client:
-        return None
-
-    try:
-        import io
-        audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = "voice.ogg"
-
-        transcript = await self.client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file,
-            language="ru",
-            response_format="text"
-        )
-
-        return transcript if isinstance(transcript, str) else transcript.text
-
-    except Exception as e:
-        logger.error(f"Whisper error: {e}")
-        return None
-
-
-async def get_response_with_context(system_prompt: str, history: list, new_message: str) -> str:
-    """Получить ответ от GPT с контекстом диалога"""
-    try:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            *history,
-            {"role": "user", "content": new_message}
-        ]
-
-        response = await client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=1000,
-            temperature=0.7
-        )
-
-        return response.choices[0].message.content
-    except Exception as e:
-        logger.error(f"GPT ошибка: {e}")
-        return f"❌ Ошибка: {str(e)}"

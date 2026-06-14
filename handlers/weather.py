@@ -1,3 +1,4 @@
+
 import math
 import hashlib
 import aiohttp
@@ -8,13 +9,11 @@ from aiogram import Router, types, F
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
+from aiohttp.client_exceptions import ServerDisconnectedError
 
 from keyboards.keyboar import main_keyboard, back_keyboard, get_notes_reply_keyboard, get_ai_menu, get_hr_menu
 from config import settings, token_weather
 from states.user_states import WeatherStates
-
-router = Router()
-logger = logging.getLogger(__name__)
 
 # Исправлено: используем только settings
 weather_token = settings.weather_token
@@ -214,7 +213,6 @@ async def cmd_weather_location(message: types.Message):
         "🌐 Переводчик"
     ])
 )
-@router.message(WeatherStates.forecast_weather, F.text)
 async def show_weather_forecast(message: Message, state: FSMContext):
     """Обработчик ввода города для прогноза на 5 дней"""
 
@@ -399,15 +397,6 @@ async def weather_change_city(callback: CallbackQuery, state: FSMContext):
     await state.set_state(WeatherStates.forecast_weather)
     await callback.message.answer(
         "🏙 Введите новый город:"
-    )
-    await callback.answer()
-
-
-@router.callback_query(F.data == "menu:main")
-async def back_to_main_menu(callback: CallbackQuery):
-    await callback.message.answer(
-        "🏠 Главное меню",
-        reply_markup=main_keyboard
     )
     await callback.answer()
 

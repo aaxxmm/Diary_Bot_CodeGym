@@ -1,3 +1,4 @@
+
 import config
 import io
 import logging
@@ -5,7 +6,6 @@ from aiogram import Router, F
 from aiogram.types import Message, Voice
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-import speech_recognition as sr
 
 from typing import cast
 from states.user_states import TranslateState
@@ -18,6 +18,12 @@ router = Router(name="translate")
 
 @router.message(TranslateState.waiting_for_text, F.text)
 async def translate_text_handler(message: Message, state: FSMContext):
+    text_to_translate = message.text.strip()
+
+    if not text_to_translate:
+        await message.answer("❌ Нет текста для перевода.")
+        return
+
     """Обработка текста для перевода"""
     text_to_translate = message.text
 
@@ -50,14 +56,6 @@ async def translate_text_handler(message: Message, state: FSMContext):
         )
 
     await state.clear()
-
-
-@router.message(TranslateState.waiting_for_text, F.voice)
-async def translate_voice_handler(message: Message, state: FSMContext):
-    """Обработка голосового сообщения через Whisper"""
-    # Просто перенаправляем в общий обработчик
-    from handlers.common import handle_voice_whisper
-    await handle_voice_whisper(message, state)
 
 
 @router.message(Command("cancel"))

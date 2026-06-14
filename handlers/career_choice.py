@@ -1,3 +1,6 @@
+
+import re
+
 from aiogram import Router, types, F
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
@@ -61,23 +64,20 @@ async def command_prof(message: types.Message, state: FSMContext):
 def extract_profession_name(profession_with_emoji: str) -> str:
     """Извлекает название профессии без эмодзи"""
     # Убираем эмодзи и пробел после него
-    import re
     # Удаляем эмодзи в начале строки
     cleaned = re.sub(r'^[🐍💻🎨📊📈🔧🤖📱🤵]\s*', '', profession_with_emoji)
     return cleaned.strip()
 
-
-@router.callback_query(F.data == "hr:career_choice")
-async def hr_career_choice(callback: CallbackQuery, state: FSMContext):
-    """Обработчик inline кнопки выбора профессии"""
-    await callback.message.answer(
-        '**Выберите профессию**\n\n'
-        'Я помогу вам определить подходящий уровень и дам рекомендации:',
+@router.message(Command('recommend'))
+async def command_recommend(message: types.Message, state: FSMContext):
+    """Обработчик команды /recommend"""
+    await message.answer(
+        '🎯 **Для получения рекомендаций**\n\n'
+        'Пожалуйста, выберите профессию:',
         reply_markup=make_row_keyboard(available_jobs),
         parse_mode="Markdown"
     )
     await state.set_state(CareerChoice.job)
-    await callback.answer()
 
 
 @router.message(CareerChoice.job, F.text.in_(available_jobs))

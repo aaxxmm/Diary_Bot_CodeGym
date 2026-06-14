@@ -1,3 +1,5 @@
+# обрабатывает основное меню
+
 import io
 import logging
 from aiogram import Router, F
@@ -254,71 +256,6 @@ async def show_gpt_chat(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.callback_query(F.data == "ai:translate")
-async def ai_translate_menu(callback: CallbackQuery, state: FSMContext):
-    """Обработчик кнопки перевода в AI меню"""
-    from states.user_states import TranslateState
-
-    await state.set_state(TranslateState.waiting_for_text)
-
-    await callback.message.edit_text(
-        "🌐 *AI Перевод текста*\n\n"
-        "Отправьте текст для перевода.\n\n"
-        "Я переведу его с любого языка на русский (или наоборот).\n\n"
-        "Примеры:\n"
-        "• 'Hello, how are you?'\n"
-        "• 'Привет, как дела?'\n"
-        "• Отправьте голосовое сообщение",
-        parse_mode="Markdown",
-        reply_markup=get_cancel_inline_keyboard()
-    )
-    await callback.answer()
-
-
-@router.callback_query(F.data == "ai:edit")
-async def ai_edit_menu(callback: CallbackQuery, state: FSMContext):
-    """Обработчик кнопки редактирования текста в AI меню"""
-    from states.user_states import GPTStates
-
-    await state.set_state(GPTStates.waiting_for_question)
-    await state.update_data(edit_mode=True, ai_mode="edit")
-
-    await callback.message.edit_text(
-        "✍️ *AI Редактирование текста*\n\n"
-        "Отправьте текст, который нужно отредактировать.\n\n"
-        "Я могу:\n"
-        "• Исправить грамматические ошибки\n"
-        "• Улучшить стиль текста\n"
-        "• Сделать текст более профессиональным\n\n"
-        "Просто напишите текст:",
-        parse_mode="Markdown",
-        reply_markup=get_cancel_inline_keyboard()
-    )
-    await callback.answer()
-
-
-@router.callback_query(F.data == "ai:summarize")
-async def ai_summarize_menu(callback: CallbackQuery, state: FSMContext):
-    """Обработчик кнопки резюме заметок в AI меню"""
-    from states.user_states import GPTStates
-
-    await state.set_state(GPTStates.waiting_for_question)
-    await state.update_data(summarize_mode=True, ai_mode="summarize")
-
-    await callback.message.edit_text(
-        "📝 *AI Резюме текста*\n\n"
-        "Отправьте текст, который нужно сократить или сделать краткое резюме.\n\n"
-        "Я сделаю:\n"
-        "• Краткое изложение основного содержания\n"
-        "• Выделю ключевые моменты\n"
-        "• Сохраню важную информацию\n\n"
-        "Отправьте текст для анализа:",
-        parse_mode="Markdown",
-        reply_markup=get_cancel_inline_keyboard()
-    )
-    await callback.answer()
-
-
 @router.callback_query(F.data == "cancel")
 async def cancel_action(callback: CallbackQuery, state: FSMContext):
     """Отмена текущего действия"""
@@ -473,6 +410,23 @@ async def help_button(message: Message):
     await message.answer(help_text, parse_mode="Markdown")
 
 
+@router.message(F.text == "🏠 Главное меню")
+async def back_to_main_menu_text(message: Message, state: FSMContext):
+    """Обработчик текстовой кнопки возврата в главное меню"""
+    await state.clear()
+
+    user_name = message.from_user.first_name
+    welcome_text = (
+        f"👋 *Добро пожаловать обратно, {user_name}!*\n\n"
+        f"Выберите нужную функцию с помощью кнопок ниже:"
+    )
+
+    await message.answer(
+        welcome_text,
+        parse_mode="Markdown",
+        reply_markup=main_keyboard
+    )
+
 
 @router.message(Command("ping"))
 async def ping(message: Message):
@@ -562,3 +516,9 @@ async def catch_all_messages(message: Message, state: FSMContext):
             f"Пожалуйста, используйте кнопки меню для навигации.",
             reply_markup=main_keyboard
         )
+
+@router.callback_query()
+async def log_all_callbacks(callback: CallbackQuery):
+    """Логирование всех callback для отладки"""
+    logger.debug(f"Callback: {callback.data} from user {callback.from_user.id}")
+    # Не вызываем callback.answer() здесь, чтобы не блокировать другие хэндлеры

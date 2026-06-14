@@ -60,3 +60,4 @@ class NoteState(StatesGroup):
     waiting_for_content = State()
     waiting_for_search = State()
     waiting_for_new_title = State() # редактирования заголовка
+    waiting_for_new_tags = State()  # для редактирования тегов

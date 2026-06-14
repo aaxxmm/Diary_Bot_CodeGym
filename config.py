@@ -1,3 +1,4 @@
+# Загружает переменные окружения из файла .env или системных переменных
 import os
 import logging
 from pathlib import Path

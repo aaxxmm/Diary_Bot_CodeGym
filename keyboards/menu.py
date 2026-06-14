@@ -1,7 +1,6 @@
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
+
 
 def get_main_menu() -> InlineKeyboardBuilder:
     """Main menu with all features"""

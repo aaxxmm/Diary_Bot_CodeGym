@@ -56,7 +56,7 @@ def format_task_list(tasks, show_actions: bool = False, page: int = 1, per_page:
             text += f"   🔔 Напоминание: за {task.reminder_minutes} мин.\n"
         text += "\n"
 
-    # Create pagination keyboard
+    # Создаём клавиатуру
     builder = InlineKeyboardBuilder()
     if page > 1:
         builder.button(text="◀️ Назад", callback_data=f"tasks:page:{page - 1}")
@@ -65,7 +65,8 @@ def format_task_list(tasks, show_actions: bool = False, page: int = 1, per_page:
     builder.button(text="🏠 Главное меню", callback_data="menu:main")
     builder.adjust(2)
 
-    return text, builder.as_markup() if builder.buttons else None
+    keyboard = builder.as_markup() if builder.buttons else None
+    return text, keyboard
 
 
 @router.callback_query(F.data == "menu:tasks")
@@ -363,12 +364,6 @@ async def complete_task(callback: CallbackQuery):
     user_id = callback.from_user.id
 
     # Диагностика
-    task_before = storage.get_task(user_id, task_id)
-    logger.info(f"Before complete: status={task_before.status if task_before else 'None'}")
-
-    result = storage.update_task_status(user_id, task_id, 'completed')
-
-    # Диагностика
     task_after = storage.get_task(user_id, task_id)
     logger.info(f"After complete: result={result}, status={task_after.status if task_after else 'None'}")
 
@@ -397,6 +392,12 @@ async def postpone_task(callback: CallbackQuery):
     task_id = int(parts[2])
     minutes = int(parts[3])
     user_id = callback.from_user.id
+
+    task = storage.get_task(user_id, task_id)
+    if not task:
+        await callback.answer("❌ Задача не найдена")
+        await manage_tasks(callback)
+        return
 
     if storage.postpone_task(user_id, task_id, minutes):
         await callback.answer(f"⏰ Задача отложена на {minutes} минут!")

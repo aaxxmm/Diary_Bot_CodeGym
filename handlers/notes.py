@@ -1,3 +1,4 @@
+
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
@@ -14,6 +15,19 @@ from config import settings
 
 logger = logging.getLogger(__name__)
 router = Router(name="notes")
+
+# ============================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+# ============================================
+
+def extract_tags_from_content(content: str) -> list:
+    """Извлекает теги из содержания заметки (слова с #)"""
+    if not content:
+        return []
+    # Находит все слова, начинающиеся с #
+    tags = re.findall(r'#(\w+)', content)
+    # Приводим к нижнему регистру и убираем дубликаты
+    return list(set([tag.lower() for tag in tags]))
 
 
 # ============================================
@@ -134,7 +148,6 @@ def get_note_actions_keyboard(note_id: int, note_title: str):
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-
 # ============================================
 # ОСНОВНЫЕ ОБРАБОТЧИКИ
 # ============================================
@@ -202,7 +215,7 @@ async def create_note_content(message: Message, state: FSMContext):
         title = "Без названия"
 
     # Извлекаем теги из содержания
-    tags = re.findall(r'#(\w+)', content)
+    tags = extract_tags_from_content(content)
 
     # Создаем заметку
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -493,7 +506,11 @@ async def edit_note_start(callback: CallbackQuery, state: FSMContext):
     notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index >= len(notes):
-        await callback.answer("❌ Заметка не найдена")
+        await callback.answer("❌ Заметка не найдена или была удалена")
+        await callback.message.edit_text(
+            "Заметка не найдена.",
+            reply_markup=get_notes_reply_keyboard()
+        )
         return
 
     note = notes[note_index]
@@ -538,7 +555,7 @@ async def save_edited_note(message: Message, state: FSMContext):
         return
 
     # Обновляем теги
-    tags = re.findall(r'#(\w+)', new_content)
+    tags = extract_tags_from_content(new_content)
 
     # Обновляем заметку
     notes[note_index]["content"] = new_content
@@ -646,7 +663,11 @@ async def edit_note_title_start(callback: CallbackQuery, state: FSMContext):
     notes.sort(key=lambda x: x.get("created_at") or "", reverse=True)
 
     if note_index >= len(notes):
-        await callback.answer("❌ Заметка не найдена")
+        await callback.answer("❌ Заметка не найдена или была удалена")
+        await callback.message.edit_text(
+            "Заметка не найдена.",
+            reply_markup=get_notes_reply_keyboard()
+        )
         return
 
     note = notes[note_index]
@@ -739,7 +760,7 @@ async def edit_note_tags_start(callback: CallbackQuery, state: FSMContext):
     old_tags_text = ', '.join(f'#{t}' for t in old_tags) if old_tags else "нет тегов"
 
     await state.update_data(edit_note_index=note_index)
-    await state.set_state(NoteState.waiting_for_new_title)
+    await state.set_state(NoteState.waiting_for_new_tags)
     await state.update_data(edit_mode="tags")
 
     await callback.message.edit_text(
@@ -753,7 +774,7 @@ async def edit_note_tags_start(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.message(NoteState.waiting_for_new_title, F.text)
+@router.message(NoteState.waiting_for_new_tags, F.text)  # ← ИЗМЕНЕНО!
 async def save_edited_note_tags(message: Message, state: FSMContext):
     """Сохранение новых тегов заметки"""
     data = await state.get_data()

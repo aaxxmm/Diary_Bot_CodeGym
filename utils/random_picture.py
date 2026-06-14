@@ -1,6 +1,7 @@
 
 import aiohttp
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -26,5 +27,3 @@ async def fox():
         return None
 
 
-# Импорт для asyncio
-import asyncio
